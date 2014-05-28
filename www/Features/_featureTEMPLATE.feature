@@ -5,7 +5,7 @@ As a user,
 I can DOWHAT
 
 
-Scenario: should DOWHAT
+Scenario: Should DOWHAT
 
 	Given WHAT
 	When WHAT

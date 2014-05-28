@@ -54,7 +54,11 @@
 - Add time estimates to all tasks
 - Add time estimates to the EnterValueStatements feature
 
-### 
+### !10:45-11:22
+
+- Setup Marmalade Project
+- Documented Using Junctions to keep a clean project structure
+
 
 ---
 # FUTURE TASKS

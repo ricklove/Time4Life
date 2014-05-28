@@ -1,0 +1,47 @@
+#!/usr/bin/env mkb
+
+# Web Marmalade Project
+
+if {{ option use_prebuilt }}
+{
+    subproject "$MARMALADE_ROOT/web/wmApplication/wmApplication_prebuilt"
+}
+else
+{
+    subproject "$MARMALADE_ROOT/web/wmApplication/wmApplication"
+}
+
+assets
+{
+    (data)
+    webassets
+    iwaudiocapture
+
+    [including_iwui_style]
+    <include, Default>
+    (data)
+    #Fonts only needed when defaulting to IwUI in IwAudioCapture (which IwNUI uses)
+    #This helps reduce the package size on iOS and Android
+    iwui_style
+}
+
+deployments
+{
+    ["Windows"]
+    win32
+    arch=x86
+    assets=including_iwui_style
+
+    ["Mac OS X"]
+    osx
+    arch=x86
+    assets=including_iwui_style
+
+    # Ensure subsequent options set on "Default" configuration
+    ["Default"]
+}
+
+options
+{
+    builddir = build_temp
+}

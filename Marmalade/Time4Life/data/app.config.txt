@@ -1,0 +1,3 @@
+[Web]
+WebStartURL			<String>	Startup url.  If it contains not scheme, e.g. "http://", then the file will assumed to be local.
+WebRootDirectory    <String>    Location of web assets relative to app root directory.

@@ -45,15 +45,25 @@
 
 - Restructure this WorkHours file
 
+### !8:49-8:53
+
+- Setup Marmalade SDK
+
+### 8:54-8:59
+
+- Add time estimates to all tasks
+- Add time estimates to the EnterValueStatements feature
+
+### 
 
 ---
 # FUTURE TASKS
 
-- Complete benefits analysis
+- Complete benefits analysis (30)
 
-- Include the testing framework
-- Create the EnterValueStatements feature tests
-- Extend the testing framework to load feature files and compare them to the written tests to make sure all features are being tested
-- Implement the EnterValueStatements feature
+- Include the testing framework (15)
+- Create the first EnterValueStatements feature scenario test (10)
+- Extend the testing framework to load feature files and compare them to the written tests to make sure all features are being tested (30)
+- Create and implement the EnterValueStatements feature scenarios (70)
 
-- Add Github files: README and LICENSE
+- Add Github files: README and LICENSE (5)

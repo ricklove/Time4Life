@@ -162,7 +162,7 @@ module Told.FeatureTests {
 
                     // Compare the feature definitions to the actual feature tests
                     var tested: IFeatureDefinition[] = [];
-                    var doComparison = (a: IFeatureDefinition[], b: IFeatureDefinition[], bType: string) => {
+                    var doComparison = (a: IFeatureDefinition[], b: IFeatureDefinition[], aType: string, bType: string) => {
                         a.forEach(f=> {
 
                             //if (tested.some(item=> item.title === f.title)) {
@@ -170,7 +170,7 @@ module Told.FeatureTests {
                             //}
                             //tested.push(f);
 
-                            test(f.title, () => {
+                            test(aType + " - " + f.title, () => {
 
                                 var mFeatures = b.filter(item => item.title === f.title);
                                 if (mFeatures.length === 0) {
@@ -196,10 +196,8 @@ module Told.FeatureTests {
                         });
                     };
 
-                    QUnit.module("Features File List");
-                    doComparison(features, Feature.TestedFeatures, "Test");
-                    QUnit.module("Features Test List");
-                    doComparison(Feature.TestedFeatures, features, "File");
+                    doComparison(features, Feature.TestedFeatures, "FILE", "TEST");
+                    doComparison(Feature.TestedFeatures, features, "TEST", "FILE");
 
                 };
 

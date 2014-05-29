@@ -76,7 +76,7 @@
 
 ### 7:01-7:33
 
-- Begin: Create the first EnterValueStatements feature scenario test (10)
+- BEGIN: Create the first EnterValueStatements feature scenario test (10)
 
 ### 7:34-7:39 Summary
 
@@ -104,7 +104,7 @@
 
 ### 10:00-11:24 !TestFramework
 
-- Begin: Extend the testing framework to load feature files and compare them to the written tests to make sure all features are being tested (30)
+- BEGIN: Extend the testing framework to load feature files and compare them to the written tests to make sure all features are being tested (30)
 
 ### 12:45-13:15 !TestFramework
 
@@ -114,9 +114,12 @@
 
 - Parse the Feature Files
 
-### 13:36-14:15 !TestFramework
+### 13:36-14:25 !TestFramework
 
 - Compare the feature definitions to the tested features
+- Improve Formatting
+- END: Extend the testing framework to load feature files and compare them to the written tests to make sure all features are being tested (30)
+
 
 ---
 # FUTURE TASKS
@@ -124,8 +127,8 @@
 - Complete benefits analysis (30)
 
 
+- END: Create the first EnterValueStatements feature scenario test (10)
 
-- Extend the testing framework to load feature files and compare them to the written tests to make sure all features are being tested (30)
 - Create and implement the EnterValueStatements feature scenarios (70)
 
 - Add Github files: README and LICENSE (5)

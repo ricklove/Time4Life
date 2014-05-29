@@ -20,7 +20,7 @@ module Told.Time4Life.UI.Tests {
 
             step("Given this is the first run");
 
-            var viewModel: IVMMain = createViewModel_Empty();
+            var viewModel = createViewModel_Empty();
 
             step_WhenTheAppIsLoaded(step, done, fail, viewModel, () => {
                 throw "Not Implemented";

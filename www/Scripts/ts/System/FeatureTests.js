@@ -144,13 +144,13 @@ var Told;
 
                         // Compare the feature definitions to the actual feature tests
                         var tested = [];
-                        var doComparison = function (a, b, bType) {
+                        var doComparison = function (a, b, aType, bType) {
                             a.forEach(function (f) {
                                 //if (tested.some(item=> item.title === f.title)) {
                                 //    return;
                                 //}
                                 //tested.push(f);
-                                test(f.title, function () {
+                                test(aType + " - " + f.title, function () {
                                     var mFeatures = b.filter(function (item) {
                                         return item.title === f.title;
                                     });
@@ -177,10 +177,8 @@ var Told;
                             });
                         };
 
-                        QUnit.module("Features File List");
-                        doComparison(features, Feature.TestedFeatures, "Test");
-                        QUnit.module("Features Test List");
-                        doComparison(Feature.TestedFeatures, features, "File");
+                        doComparison(features, Feature.TestedFeatures, "FILE", "TEST");
+                        doComparison(Feature.TestedFeatures, features, "TEST", "FILE");
                     };
 
                     var onFeatureFileLoaded = function (fileUrl, fileText) {

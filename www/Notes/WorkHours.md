@@ -74,10 +74,11 @@
 	- Import the required files
 	- Setup the first scenario test to the point of failure
 
+### 7:01-7:33
+
+- Begin: Create the first EnterValueStatements feature scenario test (10)
+
 ### 
-
-- Create the first EnterValueStatements feature scenario test (10)
-
 
 ---
 # FUTURE TASKS

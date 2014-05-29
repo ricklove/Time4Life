@@ -18,7 +18,35 @@ var Told;
                     "When the app is loaded                 ",
                     "Then I can see the first value question"
                 ], function (step, done) {
+                    step("Given this is the first run");
+                    var viewModel = new Told.Time4Life.UI.VMMain(Tests.providers_Empty);
+
+                    Tests.step_WhenTheAppIsLoaded(viewModel, step, function () {
+                        throw "Not Implemented";
+                    }, done);
                 });
+
+                // Sample Data
+                Tests.providers_Empty = {
+                    userSettings: {},
+                    config: {}
+                };
+
+                // Steps
+                Tests.step_WhenTheAppIsLoaded = function (viewModel, step, onLoaded, onFail) {
+                    step("When the app is loaded");
+
+                    var onReady = function () {
+                        onLoaded();
+                    };
+
+                    var onError = function (message) {
+                        ok(false, "ERROR:" + message);
+                        onFail();
+                    };
+
+                    viewModel.enterValueStatements.showDefault(onReady, onError);
+                };
             })(UI.Tests || (UI.Tests = {}));
             var Tests = UI.Tests;
         })(Time4Life.UI || (Time4Life.UI = {}));

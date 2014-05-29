@@ -17,5 +17,34 @@ module Told.Time4Life.UI.Tests {
         "Then I can see the first value question",
     ], function (step, done) {
 
+            step("Given this is the first run");
+            var viewModel = new UI.VMMain(providers_Empty);
+
+            step_WhenTheAppIsLoaded(viewModel, step, function () {
+                throw "Not Implemented";
+            }, done);
         });
+
+
+    // Sample Data
+    export var providers_Empty: Data.IProviders = {
+        userSettings: {},
+        config: {}
+    };
+
+    // Steps
+    export var step_WhenTheAppIsLoaded = function (viewModel: UI.IVMMain, step: (title: string) => void, onLoaded: () => void, onFail: () => void) {
+        step("When the app is loaded");
+
+        var onReady = function () {
+            onLoaded();
+        };
+
+        var onError = function (message: string) {
+            ok(false, "ERROR:" + message);
+            onFail();
+        };
+
+        viewModel.enterValueStatements.showDefault(onReady, onError);
+    };
 }

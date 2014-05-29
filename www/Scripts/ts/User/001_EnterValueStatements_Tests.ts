@@ -23,7 +23,8 @@ module Told.Time4Life.UI.Tests {
             var viewModel: IVMMain = createViewModel_Empty();
 
             step_WhenTheAppIsLoaded(step, done, fail, viewModel, () => {
-                throw "Not Implemented";
+                //throw "Not Implemented";
+                fail("Not Implemented");
             });
         });
 

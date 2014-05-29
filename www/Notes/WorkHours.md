@@ -94,21 +94,21 @@
 
 - Straighten up the tests
 
-## Hour 3
 
-### 8:57-8:57 Plan
+## Unstructured
 
-- Finish the test framework
-
-### 8:58-9:13
-### 9:40-10:00
+### 8:57-9:13 !TestFramework
+### 9:40-10:00 !TestFramework
 
 - Refactor Test writing
 
-### 10:00-11:24
+### 10:00-11:24 !TestFramework
 
 - Begin: Extend the testing framework to load feature files and compare them to the written tests to make sure all features are being tested (30)
 
+### 12:45-13:15 !TestFramework
+
+- Fix Async running of FeatureFile Loading
 
 
 ---

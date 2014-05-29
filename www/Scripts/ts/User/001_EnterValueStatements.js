@@ -16,7 +16,8 @@ var Told;
                 });
 
                 VMEnterValueStatements.prototype.showDefault = function (onReady, onError) {
-                    throw "Not Implemented";
+                    //throw "Not Implemented";
+                    onError("Not Implemented");
                 };
                 return VMEnterValueStatements;
             })();

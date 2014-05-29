@@ -23,7 +23,8 @@ var Told;
                     var viewModel = Tests.createViewModel_Empty();
 
                     Tests.step_WhenTheAppIsLoaded(step, done, fail, viewModel, function () {
-                        throw "Not Implemented";
+                        //throw "Not Implemented";
+                        fail("Not Implemented");
                     });
                 });
 

@@ -2,7 +2,19 @@
 
 module Told.FeatureTests {
 
-    export var TestTimeOut = 5000;
+    // DEBUG
+    var _start = start;
+    start = () => {
+        console.log("start");
+        _start();
+    };
+    var _stop = stop;
+    stop = () => {
+        console.log("start");
+        _stop();
+    };
+
+    export var TimeOutStep = 3000;
 
     function testLog(message: string) {
         ok(true, message);
@@ -43,15 +55,22 @@ module Told.FeatureTests {
             var timeoutID: number = null;
 
             var resetTimeout = function () {
-                clearTimeout(timeoutID);
 
-                var t = timeoutOverride || TestTimeOut;
+                var t = timeoutOverride || TimeOutStep;
+
+                if (timeoutID !== null) {
+                    clearTimeout(timeoutID);
+                    console.log("Cleared " + timeoutID);
+                    timeoutID = null;
+                }
 
                 timeoutID = setTimeout(() => {
                     ok(false, "Test Timed Out after " + t + "ms");
 
                     done();
                 }, t);
+
+                console.log("Started " + timeoutID);
             };
 
             var step = function (title: string) {
@@ -63,6 +82,8 @@ module Told.FeatureTests {
 
             var done = function () {
                 clearTimeout(timeoutID);
+                console.log("Cleared " + timeoutID);
+                timeoutID = null;
 
                 deepEqual(steps, expectedSteps, "Actual steps match the expected steps");
                 start();
@@ -77,9 +98,8 @@ module Told.FeatureTests {
                 testLog(stepSummary);
 
                 try {
-                    execute(step, done, fail);
                     resetTimeout();
-
+                    execute(step, done, fail);
                 } catch (error) {
                     ok(false, "Exception: " + error);
                     done();
@@ -105,36 +125,58 @@ module Told.FeatureTests {
                 featureFolderUrl = featureFolderUrl.substr(0, featureFolderUrl.length - 1);
             }
 
-            //QUnit.module("Features List");
-            //asyncTest("Verify Features", () => {});
+            QUnit.module("Features List");
+            asyncTest("Verify Features", () => {
 
+                var timeoutID;
 
-            var features: IFeatureDefinition[] = [];
+                var resetTimeout = () => {
+                    clearTimeout(timeoutID);
+                    timeoutID = setTimeout(() => {
+                        start();
+                    }, TimeOutStep);
+                };
 
-            var onFeatureFilesFinishedLoading = () => {
-                // TODO: Compare the feature definitions to the actual feature tests
-                throw "Not Implemented";
-            };
+                resetTimeout();
 
-            var onFeatureFileLoaded = (fileUrl: string, fileText: string) => {
-                var f = FeatureFiles.parseFeatureFile(fileText);
-                features.push(f);
-            };
+                var features: IFeatureDefinition[] = [];
 
-            var onFeatureFileLoadError = (fileUrl: string, errorMessage: string) => {
-                //ok(false, "Load FeatureFile Error: " + fileUrl + " : " + errorMessage);
-                //start();
-                throw "FeatureFile was not loaded: " + fileUrl + " : " + errorMessage;
-            };
+                var onFeatureFilesFinishedLoading = () => {
+                    // TODO: Compare the feature definitions to the actual feature tests
+                    throw "Not Implemented";
+                    //ok(false, "Not Implemented");
+                    //start();
 
-            var onFileListLoaded = (data: string) => {
-                var files = FeatureFiles.parseFeatureList(data);
-                var urls = files.map(f=> featureFolderUrl + "/" + f);
+                    clearTimeout(timeoutID);
+                };
 
-                FeatureFiles.loadAllTextFiles(urls, onFeatureFileLoaded, onFeatureFileLoadError, onFeatureFilesFinishedLoading);
-            };
+                var onFeatureFileLoaded = (fileUrl: string, fileText: string) => {
+                    resetTimeout();
 
-            FeatureFiles.loadFeatureList(featureListUrl, onFileListLoaded);
+                    var f = FeatureFiles.parseFeatureFile(fileText);
+                    features.push(f);
+                };
+
+                var onFeatureFileLoadError = (fileUrl: string, errorMessage: string) => {
+                    resetTimeout();
+
+                    ok(false, "Load FeatureFile Error: " + fileUrl + " : " + errorMessage);
+                    start();
+                    //throw "FeatureFile was not loaded: " + fileUrl + " : " + errorMessage;
+                };
+
+                var onFileListLoaded = (data: string) => {
+                    resetTimeout();
+
+                    var files = FeatureFiles.parseFeatureList(data);
+                    var urls = files.map(f=> featureFolderUrl + "/" + f);
+
+                    FeatureFiles.loadAllTextFiles(urls, onFeatureFileLoaded, onFeatureFileLoadError, onFeatureFilesFinishedLoading);
+                };
+
+                FeatureFiles.loadFeatureList(featureListUrl, onFileListLoaded);
+
+            });
         }
 
         static parseFeatureList(text: string): string[] {
@@ -173,19 +215,20 @@ module Told.FeatureTests {
                 loadCount++;
 
                 if (loadCount === fileUrls.length) {
-                    onAllFilesFinishedLoading();
+                    // Don't let an exception block this from being called
+                    setTimeout(onAllFilesFinishedLoading, 0);
                 }
             };
 
             var onLoaded = (fileUrl: string, data: string) => {
-                onFileLoaded(fileUrl, data);
                 markFileAsLoaded();
+                onFileLoaded(fileUrl, data);
             };
 
             var onError = (fileUrl: string, message: string) => {
+                markFileAsLoaded();
                 ok(false, "Load Text File Error: " + message);
                 onFileError(fileUrl, message);
-                markFileAsLoaded();
             };
 
             fileUrls.forEach((url) => {

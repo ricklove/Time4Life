@@ -2,7 +2,19 @@
 var Told;
 (function (Told) {
     (function (FeatureTests) {
-        FeatureTests.TestTimeOut = 5000;
+        // DEBUG
+        var _start = start;
+        start = function () {
+            console.log("start");
+            _start();
+        };
+        var _stop = stop;
+        stop = function () {
+            console.log("start");
+            _stop();
+        };
+
+        FeatureTests.TimeOutStep = 3000;
 
         function testLog(message) {
             ok(true, message);
@@ -38,15 +50,21 @@ var Told;
                 var timeoutID = null;
 
                 var resetTimeout = function () {
-                    clearTimeout(timeoutID);
+                    var t = timeoutOverride || FeatureTests.TimeOutStep;
 
-                    var t = timeoutOverride || FeatureTests.TestTimeOut;
+                    if (timeoutID !== null) {
+                        clearTimeout(timeoutID);
+                        console.log("Cleared " + timeoutID);
+                        timeoutID = null;
+                    }
 
                     timeoutID = setTimeout(function () {
                         ok(false, "Test Timed Out after " + t + "ms");
 
                         done();
                     }, t);
+
+                    console.log("Started " + timeoutID);
                 };
 
                 var step = function (title) {
@@ -58,6 +76,8 @@ var Told;
 
                 var done = function () {
                     clearTimeout(timeoutID);
+                    console.log("Cleared " + timeoutID);
+                    timeoutID = null;
 
                     deepEqual(steps, expectedSteps, "Actual steps match the expected steps");
                     start();
@@ -73,8 +93,8 @@ var Told;
                     testLog(stepSummary);
 
                     try  {
-                        execute(step, done, fail);
                         resetTimeout();
+                        execute(step, done, fail);
                     } catch (error) {
                         ok(false, "Exception: " + error);
                         done();
@@ -93,33 +113,57 @@ var Told;
                     featureFolderUrl = featureFolderUrl.substr(0, featureFolderUrl.length - 1);
                 }
 
-                //QUnit.module("Features List");
-                //asyncTest("Verify Features", () => {});
-                var features = [];
+                QUnit.module("Features List");
+                asyncTest("Verify Features", function () {
+                    var timeoutID;
 
-                var onFeatureFilesFinishedLoading = function () {
-                    throw "Not Implemented";
-                };
+                    var resetTimeout = function () {
+                        clearTimeout(timeoutID);
+                        timeoutID = setTimeout(function () {
+                            start();
+                        }, FeatureTests.TimeOutStep);
+                    };
 
-                var onFeatureFileLoaded = function (fileUrl, fileText) {
-                    var f = FeatureFiles.parseFeatureFile(fileText);
-                    features.push(f);
-                };
+                    resetTimeout();
 
-                var onFeatureFileLoadError = function (fileUrl, errorMessage) {
-                    throw "FeatureFile was not loaded: " + fileUrl + " : " + errorMessage;
-                };
+                    var features = [];
 
-                var onFileListLoaded = function (data) {
-                    var files = FeatureFiles.parseFeatureList(data);
-                    var urls = files.map(function (f) {
-                        return featureFolderUrl + "/" + f;
-                    });
+                    var onFeatureFilesFinishedLoading = function () {
+                        throw "Not Implemented";
 
-                    FeatureFiles.loadAllTextFiles(urls, onFeatureFileLoaded, onFeatureFileLoadError, onFeatureFilesFinishedLoading);
-                };
+                        //ok(false, "Not Implemented");
+                        //start();
+                        clearTimeout(timeoutID);
+                    };
 
-                FeatureFiles.loadFeatureList(featureListUrl, onFileListLoaded);
+                    var onFeatureFileLoaded = function (fileUrl, fileText) {
+                        resetTimeout();
+
+                        var f = FeatureFiles.parseFeatureFile(fileText);
+                        features.push(f);
+                    };
+
+                    var onFeatureFileLoadError = function (fileUrl, errorMessage) {
+                        resetTimeout();
+
+                        ok(false, "Load FeatureFile Error: " + fileUrl + " : " + errorMessage);
+                        start();
+                        //throw "FeatureFile was not loaded: " + fileUrl + " : " + errorMessage;
+                    };
+
+                    var onFileListLoaded = function (data) {
+                        resetTimeout();
+
+                        var files = FeatureFiles.parseFeatureList(data);
+                        var urls = files.map(function (f) {
+                            return featureFolderUrl + "/" + f;
+                        });
+
+                        FeatureFiles.loadAllTextFiles(urls, onFeatureFileLoaded, onFeatureFileLoadError, onFeatureFilesFinishedLoading);
+                    };
+
+                    FeatureFiles.loadFeatureList(featureListUrl, onFileListLoaded);
+                });
             };
 
             FeatureFiles.parseFeatureList = function (text) {
@@ -163,19 +207,20 @@ var Told;
                     loadCount++;
 
                     if (loadCount === fileUrls.length) {
-                        onAllFilesFinishedLoading();
+                        // Don't let an exception block this from being called
+                        setTimeout(onAllFilesFinishedLoading, 0);
                     }
                 };
 
                 var onLoaded = function (fileUrl, data) {
-                    onFileLoaded(fileUrl, data);
                     markFileAsLoaded();
+                    onFileLoaded(fileUrl, data);
                 };
 
                 var onError = function (fileUrl, message) {
+                    markFileAsLoaded();
                     ok(false, "Load Text File Error: " + message);
                     onFileError(fileUrl, message);
-                    markFileAsLoaded();
                 };
 
                 fileUrls.forEach(function (url) {

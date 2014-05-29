@@ -1,4 +1,5 @@
-﻿/// <reference path="../../typings/qunit/qunit.d.ts" />
+﻿/// <reference path="../../typings/jquery/jquery.d.ts" />
+/// <reference path="../../typings/qunit/qunit.d.ts" />
 var Told;
 (function (Told) {
     (function (FeatureTests) {
@@ -154,7 +155,7 @@ var Told;
                     var onFileListLoaded = function (data) {
                         resetTimeout();
 
-                        var files = FeatureFiles.parseFeatureList(data);
+                        var files = FeatureFiles.parseLines(data);
                         var urls = files.map(function (f) {
                             return featureFolderUrl + "/" + f;
                         });
@@ -166,7 +167,7 @@ var Told;
                 });
             };
 
-            FeatureFiles.parseFeatureList = function (text) {
+            FeatureFiles.parseLines = function (text) {
                 return text.split("\n").map(function (f) {
                     return f.trim();
                 }).filter(function (f) {
@@ -175,7 +176,26 @@ var Told;
             };
 
             FeatureFiles.parseFeatureFile = function (text) {
-                throw "Not Implemented";
+                var parts = text.split("Scenario:");
+                var fParts = FeatureFiles.parseLines(parts[0]);
+
+                var feature = {
+                    title: fParts[0].split("Feature:").join("").trim(),
+                    notes: fParts.slice(1),
+                    scenarios: parts.slice(1).map(function (p) {
+                        var sParts = FeatureFiles.parseLines(p);
+
+                        var stParts = sParts[0].split("(");
+
+                        return {
+                            title: stParts[0].trim(),
+                            time: parseInt(stParts[1].split(")").join().trim()),
+                            steps: sParts.slice(1)
+                        };
+                    })
+                };
+
+                return feature;
             };
 
             FeatureFiles.loadFeatureList = function (featureListUrl, onFileListLoaded) {

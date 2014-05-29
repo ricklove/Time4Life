@@ -1,4 +1,5 @@
-﻿/// <reference path="../../typings/qunit/qunit.d.ts" />
+﻿/// <reference path="../../typings/jquery/jquery.d.ts" />
+/// <reference path="../../typings/qunit/qunit.d.ts" />
 
 module Told.FeatureTests {
 
@@ -110,11 +111,13 @@ module Told.FeatureTests {
 
     export interface IFeatureDefinition {
         title: string;
+        notes: string[];
         scenarios: IScenarioDefinition[];
     }
 
     export interface IScenarioDefinition {
         title: string;
+        time: number;
         steps: string[];
     }
 
@@ -168,7 +171,7 @@ module Told.FeatureTests {
                 var onFileListLoaded = (data: string) => {
                     resetTimeout();
 
-                    var files = FeatureFiles.parseFeatureList(data);
+                    var files = FeatureFiles.parseLines(data);
                     var urls = files.map(f=> featureFolderUrl + "/" + f);
 
                     FeatureFiles.loadAllTextFiles(urls, onFeatureFileLoaded, onFeatureFileLoadError, onFeatureFilesFinishedLoading);
@@ -179,12 +182,33 @@ module Told.FeatureTests {
             });
         }
 
-        static parseFeatureList(text: string): string[] {
+        static parseLines(text: string): string[] {
             return text.split("\n").map(f=> f.trim()).filter(f=> f.length > 0);
         }
 
         static parseFeatureFile(text: string): IFeatureDefinition {
-            throw "Not Implemented";
+
+            var parts = text.split("Scenario:");
+            var fParts = FeatureFiles.parseLines(parts[0]);
+
+            var feature: IFeatureDefinition = {
+                title: fParts[0].split("Feature:").join("").trim(),
+                notes: fParts.slice(1),
+                scenarios: parts.slice(1).map(p=> {
+
+                    var sParts = FeatureFiles.parseLines(p);
+
+                    var stParts = sParts[0].split("(");
+
+                    return {
+                        title: stParts[0].trim(),
+                        time: parseInt(stParts[1].split(")").join().trim()),
+                        steps: sParts.slice(1),
+                    };
+                })
+            };
+
+            return feature;
         }
 
         static loadFeatureList(featureListUrl: string, onFileListLoaded: (data: string) => void) {

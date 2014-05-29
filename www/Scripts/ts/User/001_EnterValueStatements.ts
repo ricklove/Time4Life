@@ -11,8 +11,7 @@ module Told.Time4Life.UI {
         }
 
         showDefault(onReady: () => void, onError: (message: string) => void) {
-            //throw "Not Implemented";
-            onError("Not Implemented");
+            throw "Not Implemented";
         }
     }
 }

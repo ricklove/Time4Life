@@ -15,10 +15,11 @@ module Told.Time4Life.UI.Tests {
         "Given this is the first run            ",
         "When the app is loaded                 ",
         "Then I can see the first value question",
-    ], function (step, done) {
+    ],
+        function (step, done) {
 
             step("Given this is the first run");
-            var viewModel = new UI.VMMain(providers_Empty);
+            var viewModel: IVMMain = createViewModel_Empty();
 
             step_WhenTheAppIsLoaded(viewModel, step, function () {
                 throw "Not Implemented";
@@ -27,6 +28,10 @@ module Told.Time4Life.UI.Tests {
 
 
     // Sample Data
+    export var createViewModel_Empty = function (): IVMMain {
+        return new UI.VMMain(providers_Empty);
+    };
+
     export var providers_Empty: Data.IProviders = {
         userSettings: {},
         config: {}

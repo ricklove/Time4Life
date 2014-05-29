@@ -78,7 +78,21 @@
 
 - Begin: Create the first EnterValueStatements feature scenario test (10)
 
-### 
+### 7:34-7:39 Summary
+
+	Implementing the test framework is taking longer than expected to get all the initial structure in place. 
+	A more complete project template is needed that will include all the latest framework.
+
+	I spent some time extending the system:
+
+	- Add a timeout to any tests that do not call done() for the test framework
+	- Add interfaces for the ViewModels in the _Model.ts
+	- The _Model.ts interfaces should be a complete definition for the View bindings and for testing
+	- Change the naming scheme for the ViewModels to have a simple VM or IVM prefix for their definitions
+
+### 7:40-7:43
+
+- Straighten up the tests
 
 ---
 # FUTURE TASKS

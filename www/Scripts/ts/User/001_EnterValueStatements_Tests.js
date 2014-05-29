@@ -19,7 +19,7 @@ var Told;
                     "Then I can see the first value question"
                 ], function (step, done) {
                     step("Given this is the first run");
-                    var viewModel = new Told.Time4Life.UI.VMMain(Tests.providers_Empty);
+                    var viewModel = Tests.createViewModel_Empty();
 
                     Tests.step_WhenTheAppIsLoaded(viewModel, step, function () {
                         throw "Not Implemented";
@@ -27,6 +27,10 @@ var Told;
                 });
 
                 // Sample Data
+                Tests.createViewModel_Empty = function () {
+                    return new Told.Time4Life.UI.VMMain(Tests.providers_Empty);
+                };
+
                 Tests.providers_Empty = {
                     userSettings: {},
                     config: {}

@@ -88,4 +88,116 @@ module Told.FeatureTests {
         }
     }
 
+    export interface IFeatureDefinition {
+        title: string;
+        scenarios: IScenarioDefinition[];
+    }
+
+    export interface IScenarioDefinition {
+        title: string;
+        steps: string[];
+    }
+
+    export class FeatureFiles {
+        public static verifyFeatures(featureListUrl: string, featureFolderUrl: string) {
+
+            if (featureFolderUrl[featureFolderUrl.length - 1] === "/") {
+                featureFolderUrl = featureFolderUrl.substr(0, featureFolderUrl.length - 1);
+            }
+
+            //QUnit.module("Features List");
+            //asyncTest("Verify Features", () => {});
+
+
+            var features: IFeatureDefinition[] = [];
+
+            var onFeatureFilesFinishedLoading = () => {
+                // TODO: Compare the feature definitions to the actual feature tests
+                throw "Not Implemented";
+            };
+
+            var onFeatureFileLoaded = (fileUrl: string, fileText: string) => {
+                var f = FeatureFiles.parseFeatureFile(fileText);
+                features.push(f);
+            };
+
+            var onFeatureFileLoadError = (fileUrl: string, errorMessage: string) => {
+                //ok(false, "Load FeatureFile Error: " + fileUrl + " : " + errorMessage);
+                //start();
+                throw "FeatureFile was not loaded: " + fileUrl + " : " + errorMessage;
+            };
+
+            var onFileListLoaded = (data: string) => {
+                var files = FeatureFiles.parseFeatureList(data);
+                var urls = files.map(f=> featureFolderUrl + "/" + f);
+
+                FeatureFiles.loadAllTextFiles(urls, onFeatureFileLoaded, onFeatureFileLoadError, onFeatureFilesFinishedLoading);
+            };
+
+            FeatureFiles.loadFeatureList(featureListUrl, onFileListLoaded);
+        }
+
+        static parseFeatureList(text: string): string[] {
+            return text.split("\n").map(f=> f.trim()).filter(f=> f.length > 0);
+        }
+
+        static parseFeatureFile(text: string): IFeatureDefinition {
+            throw "Not Implemented";
+        }
+
+        static loadFeatureList(featureListUrl: string, onFileListLoaded: (data: string) => void) {
+            // Load file list with ajax
+            var url = featureListUrl;
+
+            var onError = (message: string) => {
+                ok(false, "Load FeatureList Error: " + message);
+            };
+
+            $.ajax(url,
+                {
+                    dataType: "text",
+                    cache: true,
+                    success: (data: string) => { onFileListLoaded(data); },
+                    error: (jqXHR: JQueryXHR, textStatus: string, errorThrow: string) => { if (onError) { onError(textStatus + ": " + errorThrow); } }
+                });
+        }
+
+        static loadAllTextFiles(fileUrls: string[],
+            onFileLoaded: (fileUrl: string, data: string) => void,
+            onFileError: (fileUrl: string, errorMessage: string) => void,
+            onAllFilesFinishedLoading: () => void) {
+
+            var loadCount = 0;
+
+            var markFileAsLoaded = () => {
+                loadCount++;
+
+                if (loadCount === fileUrls.length) {
+                    onAllFilesFinishedLoading();
+                }
+            };
+
+            var onLoaded = (fileUrl: string, data: string) => {
+                onFileLoaded(fileUrl, data);
+                markFileAsLoaded();
+            };
+
+            var onError = (fileUrl: string, message: string) => {
+                ok(false, "Load Text File Error: " + message);
+                onFileError(fileUrl, message);
+                markFileAsLoaded();
+            };
+
+            fileUrls.forEach((url) => {
+                $.ajax(url,
+                    {
+                        dataType: "text",
+                        cache: true,
+                        success: (data: string) => { onLoaded(url, data); },
+                        error: (jqXHR: JQueryXHR, textStatus: string, errorThrow: string) => { if (onError) { onError(url, textStatus + ": " + errorThrow); } }
+                    });
+            });
+
+        }
+    }
 }

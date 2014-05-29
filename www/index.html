@@ -15,6 +15,9 @@
     <div id="qunit"></div>
     <div id="qunit-fixture"></div>
 
+    <!-- Dependencies -->
+    <script src="Scripts/js/External/jquery.min.js"></script>
+
     <!-- App -->
     <script src="Scripts/ts/User/000_MainViewModel.js"></script>
     <script src="Scripts/ts/User/001_EnterValueStatements.js"></script>
@@ -25,6 +28,10 @@
 
     <!-- Tests -->
     <script src="Scripts/ts/User/001_EnterValueStatements_Tests.js"></script>
+
+    <script type="text/javascript">
+        Told.FeatureTests.FeatureFiles.verifyFeatures("Features/_featureList.txt", "Features/");
+    </script>
 
 </body>
 </html>

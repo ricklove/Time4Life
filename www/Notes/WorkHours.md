@@ -62,9 +62,10 @@
 
 ## Hour 2
 
-### 6:15- Plan
+### 6:19-6:34 Plan
 
-- 
+- Include the testing framework (15)
+
 
 
 ---
@@ -72,7 +73,7 @@
 
 - Complete benefits analysis (30)
 
-- Include the testing framework (15)
+
 - Create the first EnterValueStatements feature scenario test (10)
 - Extend the testing framework to load feature files and compare them to the written tests to make sure all features are being tested (30)
 - Create and implement the EnterValueStatements feature scenarios (70)

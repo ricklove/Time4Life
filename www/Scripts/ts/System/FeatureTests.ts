@@ -2,6 +2,8 @@
 
 module Told.FeatureTests {
 
+    export var TestTimeOut = 5000;
+
     function testLog(message: string) {
         ok(true, message);
     }
@@ -17,7 +19,7 @@ module Told.FeatureTests {
             });
         }
 
-        public scenario(title: string, expectedSteps: string[], execute: (step: (title: string) => void, done: () => void) => void) {
+        public scenario(title: string, expectedSteps: string[], execute: (step: (title: string) => void, done: () => void) => void, timeoutOverride: number = null) {
 
             var steps: string[] = [];
             var stepSummary = "Scenario: " + title + "\r\n";
@@ -27,12 +29,30 @@ module Told.FeatureTests {
             }
 
 
+            var timeoutID: number = null;
+
+            var resetTimeout = function () {
+                clearTimeout(timeoutID);
+
+                var t = timeoutOverride || TestTimeOut;
+
+                timeoutID = setTimeout(() => {
+                    ok(false, "Test Timed Out after " + t + "ms");
+
+                    done();
+                }, t);
+            };
+
             var step = function (title: string) {
+                resetTimeout();
+
                 testLog("\tSTEP: " + title);
                 steps.push(title);
             }
 
             var done = function () {
+                clearTimeout(timeoutID);
+
                 deepEqual(steps, expectedSteps, "Actual steps match the expected steps");
                 start();
             };
@@ -42,6 +62,8 @@ module Told.FeatureTests {
 
                 try {
                     execute(step, done);
+                    resetTimeout();
+
                 } catch (error) {
                     ok(false, "Exception: " + error);
                     done();

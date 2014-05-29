@@ -2,6 +2,8 @@
 var Told;
 (function (Told) {
     (function (FeatureTests) {
+        FeatureTests.TestTimeOut = 5000;
+
         function testLog(message) {
             ok(true, message);
         }
@@ -15,7 +17,8 @@ var Told;
                     }
                 });
             }
-            Feature.prototype.scenario = function (title, expectedSteps, execute) {
+            Feature.prototype.scenario = function (title, expectedSteps, execute, timeoutOverride) {
+                if (typeof timeoutOverride === "undefined") { timeoutOverride = null; }
                 var steps = [];
                 var stepSummary = "Scenario: " + title + "\r\n";
 
@@ -23,12 +26,30 @@ var Told;
                     stepSummary += "\t" + expectedSteps[i] + "\r\n";
                 }
 
+                var timeoutID = null;
+
+                var resetTimeout = function () {
+                    clearTimeout(timeoutID);
+
+                    var t = timeoutOverride || FeatureTests.TestTimeOut;
+
+                    timeoutID = setTimeout(function () {
+                        ok(false, "Test Timed Out after " + t + "ms");
+
+                        done();
+                    }, t);
+                };
+
                 var step = function (title) {
+                    resetTimeout();
+
                     testLog("\tSTEP: " + title);
                     steps.push(title);
                 };
 
                 var done = function () {
+                    clearTimeout(timeoutID);
+
                     deepEqual(steps, expectedSteps, "Actual steps match the expected steps");
                     start();
                 };
@@ -38,6 +59,7 @@ var Told;
 
                     try  {
                         execute(step, done);
+                        resetTimeout();
                     } catch (error) {
                         ok(false, "Exception: " + error);
                         done();

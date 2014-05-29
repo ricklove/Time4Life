@@ -62,10 +62,21 @@
 
 ## Hour 2
 
-### 6:19-6:34 Plan
+### 6:19-6:24 Plan
+
+- What is the most important thing to accomplish this hour?
+
+	I will implement the test framework this hour.
+
+### 6:24-7:00
 
 - Include the testing framework (15)
+	- Import the required files
+	- Setup the first scenario test to the point of failure
 
+### 
+
+- Create the first EnterValueStatements feature scenario test (10)
 
 
 ---
@@ -74,7 +85,7 @@
 - Complete benefits analysis (30)
 
 
-- Create the first EnterValueStatements feature scenario test (10)
+
 - Extend the testing framework to load feature files and compare them to the written tests to make sure all features are being tested (30)
 - Create and implement the EnterValueStatements feature scenarios (70)
 

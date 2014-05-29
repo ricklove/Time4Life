@@ -1,7 +1,7 @@
 ﻿Feature: Enter Value Statements
 In order to feel Hope that I can Balance My Life
 So that I can overcome an Spending too Much Time on Unimportant Activities
-As a user,
+As a user
 I can Type in My Value Statements
 
 

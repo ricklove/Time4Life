@@ -39,25 +39,30 @@
 		- (I have not done the benefit's analysis yet - but the benefits are obvious to me for this project)
 	- I added plan and summary to this work hours to help maintain intentions
 
-## Hour 2
+## Unstructured
 
 ### 8:41-8:48
 
 - Restructure this WorkHours file
 
-### !8:49-8:53
+### 8:49-8:53 !Marmalade
 
-- Setup Marmalade SDK
+- Install Marmalade SDK
 
 ### 8:54-8:59
 
 - Add time estimates to all tasks
 - Add time estimates to the EnterValueStatements feature
 
-### !10:45-11:22
+### 10:45-11:22 !Marmalade
 
-- Setup Marmalade Project
+- Create Marmalade Project
 - Documented Using Junctions to keep a clean project structure
+
+
+## Hour 2
+
+### 6:15- Plan
 
 
 ---

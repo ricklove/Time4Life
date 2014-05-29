@@ -32,6 +32,9 @@ var Told;
         var Feature = (function () {
             function Feature(title, summaryStatements) {
                 this.createStepProcess = createStepProcess;
+                this._featureDefinition = { title: title, notes: summaryStatements, scenarios: [] };
+                Feature.TestedFeatures.push(this._featureDefinition);
+
                 QUnit.module(title);
                 test("Summary", function () {
                     for (var i = 0; i < summaryStatements.length; i++) {
@@ -41,6 +44,8 @@ var Told;
             }
             Feature.prototype.scenario = function (title, expectedSteps, execute, timeoutOverride) {
                 if (typeof timeoutOverride === "undefined") { timeoutOverride = null; }
+                this._featureDefinition.scenarios.push({ title: title, steps: expectedSteps, time: null });
+
                 var steps = [];
                 var stepSummary = "Scenario: " + title + "\r\n";
 
@@ -102,6 +107,7 @@ var Told;
                     }
                 });
             };
+            Feature.TestedFeatures = [];
             return Feature;
         })();
         FeatureTests.Feature = Feature;
@@ -115,7 +121,7 @@ var Told;
                 }
 
                 QUnit.module("Features List");
-                asyncTest("Verify Features", function () {
+                asyncTest("Load Feature Definitions", function () {
                     var timeoutID;
 
                     var resetTimeout = function () {
@@ -130,11 +136,51 @@ var Told;
                     var features = [];
 
                     var onFeatureFilesFinishedLoading = function () {
-                        throw "Not Implemented";
-
-                        //ok(false, "Not Implemented");
-                        //start();
                         clearTimeout(timeoutID);
+
+                        // End the Load Feature Definitions test
+                        ok(true, "Features Loaded");
+                        start();
+
+                        // Compare the feature definitions to the actual feature tests
+                        var tested = [];
+                        var doComparison = function (a, b, bType) {
+                            a.forEach(function (f) {
+                                //if (tested.some(item=> item.title === f.title)) {
+                                //    return;
+                                //}
+                                //tested.push(f);
+                                test(f.title, function () {
+                                    var mFeatures = b.filter(function (item) {
+                                        return item.title === f.title;
+                                    });
+                                    if (mFeatures.length === 0) {
+                                        ok(false, "Feature " + bType + " Missing: " + f.title);
+                                    } else if (mFeatures.length > 1) {
+                                        ok(false, "Feature Has Too Many " + bType + "s: " + f.title);
+                                    } else {
+                                        var f2 = mFeatures[0];
+                                        f.scenarios.forEach(function (s) {
+                                            var mScenarios = f2.scenarios.filter(function (item) {
+                                                return item.title === s.title;
+                                            });
+                                            if (mScenarios.length === 0) {
+                                                ok(false, "Scenario " + bType + " Missing: " + s.title);
+                                            } else if (mScenarios.length > 1) {
+                                                ok(false, "Scenario Has Too Many " + bType + "s: " + s.title);
+                                            } else {
+                                                ok(true, "Scenario has a " + bType + ": " + s.title);
+                                            }
+                                        });
+                                    }
+                                });
+                            });
+                        };
+
+                        QUnit.module("Features File List");
+                        doComparison(features, Feature.TestedFeatures, "Test");
+                        QUnit.module("Features Test List");
+                        doComparison(Feature.TestedFeatures, features, "File");
                     };
 
                     var onFeatureFileLoaded = function (fileUrl, fileText) {
@@ -189,7 +235,7 @@ var Told;
 
                         return {
                             title: stParts[0].trim(),
-                            time: parseInt(stParts[1].split(")").join().trim()),
+                            time: parseInt((stParts[1] || "").split(")").join().trim()),
                             steps: sParts.slice(1)
                         };
                     })

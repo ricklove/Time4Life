@@ -1,6 +1,6 @@
-﻿Feature: Enter Value Statements
+﻿Feature: 001 - Enter Value Statements
 In order to feel Hope that I can Balance My Life
-So that I can overcome an Spending too Much Time on Unimportant Activities
+So that I can overcome Spending too Much Time on Unimportant Activities
 As a user
 I can Type in My Value Statements
 

@@ -62,7 +62,7 @@
 
 ## Hour 2
 
-### 6:19-6:24 Plan
+### 2014-05-29 6:19-6:24 Plan
 
 - What is the most important thing to accomplish this hour?
 
@@ -93,6 +93,13 @@
 ### 7:40-7:43
 
 - Straighten up the tests
+
+## Unstructured
+
+### 8:57-9:13
+### 9:40-10:00
+
+- Refactor Test writing
 
 ---
 # FUTURE TASKS

@@ -16,14 +16,15 @@ module Told.Time4Life.UI.Tests {
         "When the app is loaded                 ",
         "Then I can see the first value question",
     ],
-        function (step, done) {
+        (step, done, fail) => {
 
             step("Given this is the first run");
+
             var viewModel: IVMMain = createViewModel_Empty();
 
-            step_WhenTheAppIsLoaded(viewModel, step, function () {
+            step_WhenTheAppIsLoaded(step, done, fail, viewModel, () => {
                 throw "Not Implemented";
-            }, done);
+            });
         });
 
 
@@ -38,18 +39,8 @@ module Told.Time4Life.UI.Tests {
     };
 
     // Steps
-    export var step_WhenTheAppIsLoaded = function (viewModel: UI.IVMMain, step: (title: string) => void, onLoaded: () => void, onFail: () => void) {
+    export var step_WhenTheAppIsLoaded = f.createStepProcess<UI.IVMMain>((step, done, fail, viewModel) => {
         step("When the app is loaded");
-
-        var onReady = function () {
-            onLoaded();
-        };
-
-        var onError = function (message: string) {
-            ok(false, "ERROR:" + message);
-            onFail();
-        };
-
-        viewModel.enterValueStatements.showDefault(onReady, onError);
-    };
+        viewModel.enterValueStatements.showDefault(done, fail);
+    });
 }

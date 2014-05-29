@@ -8,8 +8,17 @@ var Told;
             ok(true, message);
         }
 
+        function createStepProcess(execute) {
+            return function (step, done, fail, data, next) {
+                // Don't use done, call next instead
+                execute(step, next, fail, data);
+            };
+        }
+        FeatureTests.createStepProcess = createStepProcess;
+
         var Feature = (function () {
             function Feature(title, summaryStatements) {
+                this.createStepProcess = createStepProcess;
                 QUnit.module(title);
                 test("Summary", function () {
                     for (var i = 0; i < summaryStatements.length; i++) {
@@ -54,11 +63,17 @@ var Told;
                     start();
                 };
 
+                var fail = function (message) {
+                    if (typeof message === "undefined") { message = ""; }
+                    ok(false, "FAIL: " + message);
+                    done();
+                };
+
                 asyncTest(title, function () {
                     testLog(stepSummary);
 
                     try  {
-                        execute(step, done);
+                        execute(step, done, fail);
                         resetTimeout();
                     } catch (error) {
                         ok(false, "Exception: " + error);

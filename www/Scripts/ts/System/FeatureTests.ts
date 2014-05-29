@@ -8,6 +8,15 @@ module Told.FeatureTests {
         ok(true, message);
     }
 
+    export function createStepProcess<T>(execute: (step: (title: string) => void, done: () => void, fail: (message?: string) => void, data: T) => void):
+        (step: (title: string) => void, done: () => void, fail: (message?: string) => void, data: T, next: () => void) => void {
+
+        return (step, done, fail, data, next) => {
+            // Don't use done, call next instead
+            execute(step, next, fail, data);
+        };
+    }
+
     export class Feature {
         constructor(title: string, summaryStatements: string[]) {
             QUnit.module(title);
@@ -19,7 +28,9 @@ module Told.FeatureTests {
             });
         }
 
-        public scenario(title: string, expectedSteps: string[], execute: (step: (title: string) => void, done: () => void) => void, timeoutOverride: number = null) {
+        public createStepProcess = createStepProcess;
+
+        public scenario(title: string, expectedSteps: string[], execute: (step: (title: string) => void, done: () => void, fail: (message?: string) => void) => void, timeoutOverride: number = null) {
 
             var steps: string[] = [];
             var stepSummary = "Scenario: " + title + "\r\n";
@@ -57,11 +68,16 @@ module Told.FeatureTests {
                 start();
             };
 
+            var fail = function (message: string= "") {
+                ok(false, "FAIL: " + message);
+                done();
+            }
+
             asyncTest(title, () => {
                 testLog(stepSummary);
 
                 try {
-                    execute(step, done);
+                    execute(step, done, fail);
                     resetTimeout();
 
                 } catch (error) {

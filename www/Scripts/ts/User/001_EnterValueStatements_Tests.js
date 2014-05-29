@@ -17,13 +17,14 @@ var Told;
                     "Given this is the first run            ",
                     "When the app is loaded                 ",
                     "Then I can see the first value question"
-                ], function (step, done) {
+                ], function (step, done, fail) {
                     step("Given this is the first run");
+
                     var viewModel = Tests.createViewModel_Empty();
 
-                    Tests.step_WhenTheAppIsLoaded(viewModel, step, function () {
+                    Tests.step_WhenTheAppIsLoaded(step, done, fail, viewModel, function () {
                         throw "Not Implemented";
-                    }, done);
+                    });
                 });
 
                 // Sample Data
@@ -37,20 +38,10 @@ var Told;
                 };
 
                 // Steps
-                Tests.step_WhenTheAppIsLoaded = function (viewModel, step, onLoaded, onFail) {
+                Tests.step_WhenTheAppIsLoaded = f.createStepProcess(function (step, done, fail, viewModel) {
                     step("When the app is loaded");
-
-                    var onReady = function () {
-                        onLoaded();
-                    };
-
-                    var onError = function (message) {
-                        ok(false, "ERROR:" + message);
-                        onFail();
-                    };
-
-                    viewModel.enterValueStatements.showDefault(onReady, onError);
-                };
+                    viewModel.enterValueStatements.showDefault(done, fail);
+                });
             })(UI.Tests || (UI.Tests = {}));
             var Tests = UI.Tests;
         })(Time4Life.UI || (Time4Life.UI = {}));

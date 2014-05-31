@@ -1,0 +1,90 @@
+﻿// # Denotes the hierarchy
+// ## Denotes a sub item
+// ### A sub-sub item, etc.
+// #### These will be mapped to the view state hierarchy
+// # [Wizard:Name] Denotes a Series of Pages
+// # [Page:Name] Denotes a Page
+// ## [Section:Name] Denotes a sub page or section
+// ## [Section:Name] Denotes a sub page or section
+// - Unordered list item
+//     - Sub item
+// - [Value] Unordered list that will iterate through the items in the list value
+// <Type (Inputs)> Control Label (Hint)
+// <Type (Inputs)> (Hint) // No Label
+// <Type (Inputs)> () // No Label, No Hint
+// Note: Inputs are either VarNames or "Literals" delimited by comma
+// ${Variable} A variable in text
+// Note: Variables will be dot.referenced
+// Special Properties:
+// String.Lines (will split the string by lines)
+// String.Lines.Prop (will use a dictionary to perform lookups using the lines as keys)
+// @EnumName{
+//     A
+//     B
+//     C
+// } //Multi-Line Enums
+// _ at end of line continues the line for rendering
+
+
+// This wizard will help the user consider their life values
+# [Wizard:EnterValueStatements] Enter Value Statements
+
+## [Page:LifeValues] Life Values
+
+Begin by considering what is really important in your life:
+
+- At the end of your life, what will you look back and say were the best parts? 
+- What is really important to you? 
+- What do you wish you were spending time on more?
+
+<Text(Answer)> List some of your life values (Enter one per line)
+
+<Button("Next")> Next (Go to $[Page.Next.Label])
+
+
+## [Priorities] Priorities
+
+Now, consider which of your values are most important:
+
+- Of the list of values that you entered, which is the most important? 
+- Which values should you spend more time on?
+- Which values should you spend less time on?
+
+<OrderableList (LifeValues.Answer.Lines)> Sort your life values by importance (Use the up & down buttons to sort your life values by importance)
+	
+
+<Button("Back")> Back (Go back to $[Page.Previous.Label])
+<Button("Next")> Next (Go to $[Page.Next.Label])
+
+## [Time] Time
+
+Now that you have ordered your values, consider how much time you should be spending on each.
+
+- How much time should you spend on this value during the day?
+- Are there some days you should spend more time on this value?
+
+@TimesPerDay{
+	5 minutes
+	15 minutes
+	30 minutes
+	1 hour
+	2 hours
+	4 hours
+	8 hours
+}
+
+@TimesPerWeek{
+	1 day
+	2 days
+	3 days
+	4 days
+	5 days
+	6 days
+	every day
+}
+
+
+- [LifeValues.Answer.Lines]	_
+	<DropDown(@TimesPerDay,TimePerDay)>(Choose the amount of time per day) per day, _
+	<DropDown(@TimesPerWeek,TimePerWeek)>(Choose the amount of time per week) per week _ 
+	<Span(${Text.Short})>(${Text})

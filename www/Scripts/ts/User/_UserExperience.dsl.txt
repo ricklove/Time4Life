@@ -1,0 +1,80 @@
+﻿/*
+DSL: Commands
+- name: startRegex...endRegex // Define a section that will occur between startRegex and endRegex (inclusive)
+	- The ... creates a new context for the children
+	- subName: startRegex...endRegex // Define a sub section that occurs inside the parent
+	- subName: [name] //Reuse a defined section name
+- name: startRegex... // Define a section that is open ended (other sections at same level will be its end)
+- name: startRegex...endRegex {capture1,capture2} // Capture the regex captures into the named variables
+- name: startRegex...endRegex {.} // Set name's value to the capture itself
+- name: //Matches all of the sub part
+- @0 is a variable (the initial value being that number) 
+\n: beginning of line (or context)
+\r: end of line (or context)
+$: beginning of context
+^: end of context
+*/
+
+// _ at end of line should be considered one continuous line for processing
+// # Denotes the hierarchy
+// ## Denotes a sub item
+// ### A sub-sub item, etc.
+// #### These will be mapped to the view state hierarchy
+// # [Wizard:Name] Denotes a Series of Pages
+// # [Page:Name] Denotes a Page
+// ## [Section:Name] Denotes a sub page or section
+// ## [Section:Name] Denotes a sub page or section
+// - Unordered list item
+//     - Sub item
+// - [Value] Unordered list that will iterate through the items in the list value
+// <Type (Inputs)> Control Label (Hint)
+// Note: Inputs are either VarNames or "Literals" delimited by comma
+// ${Variable} A variable in text
+// Note: Variables will be dot.referenced
+// Special Properties:
+// String.Lines (will split the string by lines)
+// String.Lines.Prop (will use a dictionary to perform lookups using the lines as keys)
+// @EnumName{
+//     A
+//     B
+//     C
+// } //Multi-Line Enums
+
+ =\s*
+\t=(?:\t| {4})
+\word=(?:\w+)
+\ref=(?:(\w+.)*\w+)
+\line=(?:[^\r]+)
+\lineNoParens=(?:[^\r\(]+)
+\lineNoQuotes=(?:[^\r"]+)
+
+- ROOT: ...
+	- part: [part]
+
+- part: \n#{@1}[^#]...
+	- content: [partContent] 
+	- part: [part(+1)]
+		
+- partContent: ...
+	- header: $[ (\word) : (\word) ] (\line)\r {type,name,title}
+	- enum: @(\word){(.*)} {name,...}
+		- value: \n (\line) \r {.}
+	- list: [list]
+	- node: [node]
+
+// Capture a whole list (or sublist)
+- list: (\n\t{@0}-[^\n]+(?:\n\t{@0}[^\n]+)*) {...}
+	- listItem: \n\t{@0}-...\r
+		- enumerable: [(\ref)] (reference)
+		- node: [node]
+	- list: [listItem(+1)]
+
+- node: ...
+	- control: [control]
+	- text: (.*) {.}
+
+- control: < (\word) \( ([^\r\)]) \) > (\lineNoParens?) \( (\lineNoParens) \) {type, ..., label, hint}
+	- input: ...(?:,|$)
+		- enum:	@(\word) {.}
+		- variable: (\ref) {.}
+		- literal: ("\lineNoQuotes") {.}

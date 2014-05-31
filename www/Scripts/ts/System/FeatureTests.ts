@@ -1,5 +1,6 @@
 ﻿/// <reference path="../../typings/jquery/jquery.d.ts" />
 /// <reference path="../../typings/qunit/qunit.d.ts" />
+/// <reference path="Told.Utils.ts" />
 
 module Told.FeatureTests {
 
@@ -222,7 +223,7 @@ module Told.FeatureTests {
                     var files = FeatureFiles.parseLines(data);
                     var urls = files.map(f=> featureFolderUrl + "/" + f);
 
-                    FeatureFiles.loadAllTextFiles(urls, onFeatureFileLoaded, onFeatureFileLoadError, onFeatureFilesFinishedLoading);
+                    Told.Utils.loadAllTextFiles(urls, onFeatureFileLoaded, onFeatureFileLoadError, onFeatureFilesFinishedLoading);
                 };
 
                 FeatureFiles.loadFeatureList(featureListUrl, onFileListLoaded);
@@ -276,43 +277,6 @@ module Told.FeatureTests {
                 });
         }
 
-        static loadAllTextFiles(fileUrls: string[],
-            onFileLoaded: (fileUrl: string, data: string) => void,
-            onFileError: (fileUrl: string, errorMessage: string) => void,
-            onAllFilesFinishedLoading: () => void) {
-
-            var loadCount = 0;
-
-            var markFileAsLoaded = () => {
-                loadCount++;
-
-                if (loadCount === fileUrls.length) {
-                    // Don't let an exception block this from being called
-                    setTimeout(onAllFilesFinishedLoading, 0);
-                }
-            };
-
-            var onLoaded = (fileUrl: string, data: string) => {
-                markFileAsLoaded();
-                onFileLoaded(fileUrl, data);
-            };
-
-            var onError = (fileUrl: string, message: string) => {
-                markFileAsLoaded();
-                ok(false, "Load Text File Error: " + message);
-                onFileError(fileUrl, message);
-            };
-
-            fileUrls.forEach((url) => {
-                $.ajax(url,
-                    {
-                        dataType: "text",
-                        cache: true,
-                        success: (data: string) => { onLoaded(url, data); },
-                        error: (jqXHR: JQueryXHR, textStatus: string, errorThrow: string) => { if (onError) { onError(url, textStatus + ": " + errorThrow); } }
-                    });
-            });
-
-        }
+        
     }
 }

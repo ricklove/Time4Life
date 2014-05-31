@@ -1,5 +1,6 @@
 ﻿/// <reference path="../../typings/jquery/jquery.d.ts" />
 /// <reference path="../../typings/qunit/qunit.d.ts" />
+/// <reference path="Told.Utils.ts" />
 var Told;
 (function (Told) {
     (function (FeatureTests) {
@@ -204,7 +205,7 @@ var Told;
                             return featureFolderUrl + "/" + f;
                         });
 
-                        FeatureFiles.loadAllTextFiles(urls, onFeatureFileLoaded, onFeatureFileLoadError, onFeatureFilesFinishedLoading);
+                        Told.Utils.loadAllTextFiles(urls, onFeatureFileLoaded, onFeatureFileLoadError, onFeatureFilesFinishedLoading);
                     };
 
                     FeatureFiles.loadFeatureList(featureListUrl, onFileListLoaded);
@@ -261,45 +262,6 @@ var Told;
                             onError(textStatus + ": " + errorThrow);
                         }
                     }
-                });
-            };
-
-            FeatureFiles.loadAllTextFiles = function (fileUrls, onFileLoaded, onFileError, onAllFilesFinishedLoading) {
-                var loadCount = 0;
-
-                var markFileAsLoaded = function () {
-                    loadCount++;
-
-                    if (loadCount === fileUrls.length) {
-                        // Don't let an exception block this from being called
-                        setTimeout(onAllFilesFinishedLoading, 0);
-                    }
-                };
-
-                var onLoaded = function (fileUrl, data) {
-                    markFileAsLoaded();
-                    onFileLoaded(fileUrl, data);
-                };
-
-                var onError = function (fileUrl, message) {
-                    markFileAsLoaded();
-                    ok(false, "Load Text File Error: " + message);
-                    onFileError(fileUrl, message);
-                };
-
-                fileUrls.forEach(function (url) {
-                    $.ajax(url, {
-                        dataType: "text",
-                        cache: true,
-                        success: function (data) {
-                            onLoaded(url, data);
-                        },
-                        error: function (jqXHR, textStatus, errorThrow) {
-                            if (onError) {
-                                onError(url, textStatus + ": " + errorThrow);
-                            }
-                        }
-                    });
                 });
             };
             return FeatureFiles;

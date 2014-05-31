@@ -19,7 +19,6 @@ module Told.Time4Life.UI.Tests {
         (step, done, fail) => {
 
             step("Given this is the first run");
-
             var viewModel = createViewModel_Empty();
 
             step_WhenTheAppIsLoaded(step, done, fail, viewModel, () => {

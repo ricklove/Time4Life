@@ -74,7 +74,7 @@
 	- Import the required files
 	- Setup the first scenario test to the point of failure
 
-### 7:01-7:33
+### 7:01-7:33 !F000
 
 - BEGIN: Create the first EnterValueStatements feature scenario test (10)
 
@@ -120,11 +120,33 @@
 - Improve Formatting
 - END: Extend the testing framework to load feature files and compare them to the written tests to make sure all features are being tested (30)
 
+## Hour 3
+
+### 2014-05-31 6:02-6:05 Plan
+
+I will create a simple DSL to define the User Interface and Workflow. This will be reused in any implementation.
+
+### 6:06-7:03
+
+- BEGIN: Create DSL for User Experience (60)
+
+
+## Unstructured 
+### 8:10-8:30 !DSL
+### 10:05-10:45 !DSL
+### 11:15-12:00 !DSL
+### 15:00-15:51 !DSL
+### 16:11-16:24 !DSL
+
+- Write DSL Parser
+
 
 ---
 # FUTURE TASKS
 
 - Complete benefits analysis (30)
+- Create DSL for User Experience (60)
+- Parse DSL to create UI (120)
 
 
 - END: Create the first EnterValueStatements feature scenario test (10)

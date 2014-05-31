@@ -19,7 +19,6 @@ var Told;
                     "Then I can see the first value question"
                 ], function (step, done, fail) {
                     step("Given this is the first run");
-
                     var viewModel = Tests.createViewModel_Empty();
 
                     Tests.step_WhenTheAppIsLoaded(step, done, fail, viewModel, function () {

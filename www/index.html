@@ -19,6 +19,17 @@
 
     <!-- Dependencies -->
     <script src="Scripts/js/External/jquery.min.js"></script>
+    <script src="Scripts/ts/System/Told.Utils.js"></script>
+    <script src="Scripts/ts/System/DSLParser.js"></script>
+
+    <script type="text/javascript">
+        var def;
+        Told.DSL.loadDslDefinition("Scripts/ts/User/_UserExperience.dsl.txt",
+            function (d) {
+                def = d;
+            }, function () { });
+    </script>
+
 
     <!-- App -->
     <script src="Scripts/ts/User/000_MainViewModel.js"></script>

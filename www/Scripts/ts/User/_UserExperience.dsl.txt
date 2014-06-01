@@ -5,14 +5,15 @@ DSL: Commands
 	- subName: startRegex...endRegex // Define a sub section that occurs inside the parent
 	- subName: [name] //Reuse a defined section name
 - name: startRegex... // Define a section that is open ended (other sections at same level will be its end)
-- name: startRegex...endRegex {capture1,capture2} // Capture the regex captures into the named variables
-- name: startRegex...endRegex {.} // Set name's value to the capture itself
+- name: startRegex...endRegex {{capture1,capture2}} // Capture the regex captures into the named variables
+- name: startRegex...endRegex {{.}} // Set name's value to the capture itself
 - name: //Matches all of the sub part
 - @0 is a variable (the initial value being that number) 
 \n: beginning of line (or context)
 \r: end of line (or context)
-$: beginning of context
-^: end of context
+^: beginning of context
+$: end of context
+...: lazy capture (unless open ended)
 */
 
 // _ at end of line should be considered one continuous line for processing
@@ -40,6 +41,8 @@ $: beginning of context
 //     C
 // } //Multi-Line Enums
 
+# REPLACEMENTS:
+
  =\s*
 \t=(?:\t| {4})
 \word=(?:\w+)
@@ -47,6 +50,8 @@ $: beginning of context
 \line=(?:[^\r]+)
 \lineNoParens=(?:[^\r\(]+)
 \lineNoQuotes=(?:[^\r"]+)
+
+# PATTERNS:
 
 - ROOT: ...
 	- part: [part]
@@ -56,14 +61,14 @@ $: beginning of context
 	- part: [part(+1)]
 		
 - partContent: ...
-	- header: $[ (\word) : (\word) ] (\line)\r {type,name,title}
-	- enum: @(\word){(.*)} {name,...}
-		- value: \n (\line) \r {.}
+	- header: ^[ (\word) : (\word) ] (\line)\r {{type,name,title}}
+	- enum: @(\word){(.*)} {{name,...}}
+		- value: \n (\line) \r {{.}}
 	- list: [list]
 	- node: [node]
 
 // Capture a whole list (or sublist)
-- list: (\n\t{@0}-[^\n]+(?:\n\t{@0}[^\n]+)*) {...}
+- list: (\n\t{@0}-[^\n]+(?:\n\t{@0}[^\n]+)*) {{...}}
 	- listItem: \n\t{@0}-...\r
 		- enumerable: [(\ref)] (reference)
 		- node: [node]
@@ -73,8 +78,8 @@ $: beginning of context
 	- control: [control]
 	- text: (.*) {.}
 
-- control: < (\word) \( ([^\r\)]) \) > (\lineNoParens?) \( (\lineNoParens) \) {type, ..., label, hint}
+- control: < (\word) \( ([^\r\)]) \) > (\lineNoParens?) \( (\lineNoParens) \) {{type, ..., label, hint}}
 	- input: ...(?:,|$)
-		- enum:	@(\word) {.}
-		- variable: (\ref) {.}
-		- literal: ("\lineNoQuotes") {.}
+		- enum:	@(\word) {{.}}
+		- variable: (\ref) {{.}}
+		- literal: ("\lineNoQuotes") {{.}}

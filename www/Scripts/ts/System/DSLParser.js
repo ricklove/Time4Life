@@ -126,7 +126,44 @@ var Told;
                 };
             });
 
-            // Create debug string
+            // Assign the children to their parents
+            var lastEntry = null;
+
+            entries.forEach(function (e) {
+                if (lastEntry !== null) {
+                    if (e.indentLevel > lastEntry.indentLevel) {
+                        // Child of last
+                        e.parent = lastEntry;
+                    } else if (e.indentLevel === lastEntry.indentLevel) {
+                        // Sibling to last
+                        e.parent = lastEntry.parent;
+                    } else {
+                        while (e.indentLevel < lastEntry.indentLevel) {
+                            lastEntry = lastEntry.parent;
+                        }
+
+                        if (e.indentLevel > lastEntry.indentLevel) {
+                            // Child (This should not happen unless the list is malformed)
+                            e.parent = lastEntry;
+                        } else if (e.indentLevel === lastEntry.indentLevel) {
+                            // Sibling
+                            e.parent = lastEntry.parent;
+                        }
+                    }
+
+                    if (e.parent !== null) {
+                        e.parent.children.push(e);
+                    }
+                }
+
+                lastEntry = e;
+            });
+
+            var roots = entries.filter(function (e) {
+                return e.parent === null;
+            });
+
+            // Create debug strings
             entries.forEach(function (e) {
                 var indentation = (function () {
                     var s = "";
@@ -143,40 +180,20 @@ var Told;
                 e._debug = "" + indentation + "-" + e.name + ":" + (r.trim().length > 0 ? r : c);
             });
 
-            // Assign the children to their parents
-            var lastEntry = null;
-
-            entries.forEach(function (e) {
-                if (lastEntry !== null) {
-                    if (e.indentLevel === lastEntry.indentLevel) {
-                        e.parent = lastEntry.parent;
-
-                        if (e.parent !== null) {
-                            e.parent.children.push(e);
-                        }
-                    }
-                }
-
-                lastEntry = e;
-            });
-
-            var roots = entries.filter(function (e) {
-                return e.parent === null;
-            });
-
             var writeChildrenDebug = function (e, indent) {
                 if (e === null) {
                     return;
                 }
                 return e.children.map(function (c) {
-                    return indent + c._debug + "\r\n" + writeChildrenDebug(c, indent + "\t");
+                    return indent + c._debug.trim() + "\r\n" + writeChildrenDebug(c, indent + "\t");
                 }).join("");
             };
 
             var d = roots.map(function (e) {
-                return e._debug + "\r\n" + writeChildrenDebug(e, "\t");
+                return e._debug.trim() + "\r\n" + writeChildrenDebug(e, "\t");
             }).join("\r\n");
 
+            // Return definition
             return {
                 _debug: d,
                 replacements: replacements,

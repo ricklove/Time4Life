@@ -167,7 +167,48 @@ module Told.DSL {
             };
         });
 
-        // Create debug string
+        // Assign the children to their parents
+        var lastEntry: IDslDefinitionEntry = null;
+
+        entries.forEach(e=> {
+
+            if (lastEntry !== null) {
+
+                if (e.indentLevel > lastEntry.indentLevel) {
+                    // Child of last
+                    e.parent = lastEntry;
+                } else if (e.indentLevel === lastEntry.indentLevel) {
+                    // Sibling to last
+                    e.parent = lastEntry.parent;
+                } else {
+                    // Uncle (great-uncle) to last
+
+                    // Go to last entry's parent
+                    while (e.indentLevel < lastEntry.indentLevel) {
+                        lastEntry = lastEntry.parent;
+                    }
+
+                    if (e.indentLevel > lastEntry.indentLevel) {
+                        // Child (This should not happen unless the list is malformed)
+                        e.parent = lastEntry;
+                    } else if (e.indentLevel === lastEntry.indentLevel) {
+                        // Sibling
+                        e.parent = lastEntry.parent;
+                    }
+                }
+
+
+                if (e.parent !== null) {
+                    e.parent.children.push(e);
+                }
+            }
+
+            lastEntry = e;
+        });
+
+        var roots = entries.filter(e=> e.parent === null);
+
+        // Create debug strings
         entries.forEach(e=> {
             var indentation = (function () {
                 var s = "";
@@ -193,35 +234,14 @@ module Told.DSL {
 
         });
 
-        // Assign the children to their parents
-        var lastEntry: IDslDefinitionEntry = null;
-
-        entries.forEach(e=> {
-
-            if (lastEntry !== null) {
-                if (e.indentLevel === lastEntry.indentLevel) {
-                    e.parent = lastEntry.parent;
-
-                    if (e.parent !== null) {
-                        e.parent.children.push(e);
-                    }
-                }
-            }
-
-            lastEntry = e;
-        });
-
-        var roots = entries.filter(e=> e.parent === null);
-
         var writeChildrenDebug = (e: IDslDefinitionEntry, indent: string) => {
             if (e === null) { return; }
-            return e.children.map(c=> indent + c._debug + "\r\n" + writeChildrenDebug(c, indent + "\t")).join("");
+            return e.children.map(c=> indent + c._debug.trim() + "\r\n" + writeChildrenDebug(c, indent + "\t")).join("");
         };
 
+        var d = roots.map(e=> e._debug.trim() + "\r\n" + writeChildrenDebug(e, "\t")).join("\r\n");
 
-
-        var d = roots.map(e=> e._debug + "\r\n" + writeChildrenDebug(e, "\t")).join("\r\n");
-
+        // Return definition
         return {
             _debug: d,
             replacements: replacements,

@@ -23,7 +23,8 @@
 //     B
 //     C
 // } //Multi-Line Enums
-// _ at end of line continues the line for rendering
+// Items on contiguous lines are the same paragraph (unless it is a list)
+// Items with a blank line between become separate paragraphs
 
 
 // This wizard will help the user consider their life values
@@ -84,7 +85,7 @@ Now that you have ordered your values, consider how much time you should be spen
 }
 
 
-- [LifeValues.Answer.Lines]	_
-	<DropDown(@TimesPerDay,TimePerDay)>(Choose the amount of time per day) per day, _
-	<DropDown(@TimesPerWeek,TimePerWeek)>(Choose the amount of time per week) per week _ 
+- [LifeValues.Answer.Lines]
+	<DropDown(@TimesPerDay,TimePerDay)>(Choose the amount of time per day) per day,
+	<DropDown(@TimesPerWeek,TimePerWeek)>(Choose the amount of time per week) per week
 	<Span(${Text.Short})>(${Text})

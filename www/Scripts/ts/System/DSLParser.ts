@@ -3,6 +3,7 @@
 module Told.DSL {
 
     export interface IDslDefinition {
+        _debug?: string;
         replacements: IReplacement[];
         entries: IDslDefinitionEntry[];
         roots: IDslDefinitionEntry[];
@@ -21,6 +22,8 @@ module Told.DSL {
     //	  - content: [partContent] 
     //	  - part: [part(+1)]
     export interface IDslDefinitionEntry {
+        _debug?: string;
+
         rawText: string;
         name: string;
         patternRaw: string;
@@ -64,6 +67,9 @@ module Told.DSL {
             return { input: m[1], output: m[2] };
         });
 
+        // I'm not sure why this is sorting the longest first
+        replacements = replacements.sort((a, b) => -(a.input.length - b.input.length));
+
         // Parse each pattern
         // - header: $[ (\word) : (\word) ] (\line)\r {{ type, name, title }}
         // - part: \n#{@1}[^#]...
@@ -83,9 +89,9 @@ module Told.DSL {
         var entries: IDslDefinitionEntry[] = entryLines.filter(l=> l.trim()[0] === "-").map(l=> {
             var m = l.match(rxMainPattern);
             var indent = m[1];
-            var name = m[2];
-            var patternRaw = m[3];
-            var targetsRaw = m[4] || "";
+            var name = m[2].trim();
+            var patternRaw = m[3].trim();
+            var targetsRaw = (m[4] || "").trim();
 
 
             // Normal
@@ -161,6 +167,32 @@ module Told.DSL {
             };
         });
 
+        // Create debug string
+        entries.forEach(e=> {
+            var indentation = (function () {
+                var s = "";
+                for (var i = 0; i < e.indentLevel; i++) {
+                    s += " ";
+                }
+                return s;
+            })();
+
+            var r = " " + e.regex
+                + (e.isOpenEnded ? "..." : "")
+                + (e.targets.length > 0 ? (" {{" + e.targets.join(",") + "}}") : "");
+
+
+            var c = " [" + e.copyPatternName
+                + (e.copyPatternInput !== "" ? ("(" + e.copyPatternInput + ")") : "")
+                + "]";
+
+            e._debug = ""
+            + indentation
+            + "-" + e.name
+            + ":" + (r.trim().length > 0 ? r : c);
+
+        });
+
         // Assign the children to their parents
         var lastEntry: IDslDefinitionEntry = null;
 
@@ -179,10 +211,22 @@ module Told.DSL {
             lastEntry = e;
         });
 
+        var roots = entries.filter(e=> e.parent === null);
+
+        var writeChildrenDebug = (e: IDslDefinitionEntry, indent: string) => {
+            if (e === null) { return; }
+            return e.children.map(c=> indent + c._debug + "\r\n" + writeChildrenDebug(c, indent + "\t")).join("");
+        };
+
+
+
+        var d = roots.map(e=> e._debug + "\r\n" + writeChildrenDebug(e, "\t")).join("\r\n");
+
         return {
+            _debug: d,
             replacements: replacements,
             entries: entries,
-            roots: entries.filter(e=> e.parent === null)
+            roots: roots
         };
     }
 }

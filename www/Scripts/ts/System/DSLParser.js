@@ -32,6 +32,11 @@ var Told;
                 return { input: m[1], output: m[2] };
             });
 
+            // I'm not sure why this is sorting the longest first
+            replacements = replacements.sort(function (a, b) {
+                return -(a.input.length - b.input.length);
+            });
+
             // Parse each pattern
             // - header: $[ (\word) : (\word) ] (\line)\r {{ type, name, title }}
             // - part: \n#{@1}[^#]...
@@ -49,9 +54,9 @@ var Told;
             }).map(function (l) {
                 var m = l.match(rxMainPattern);
                 var indent = m[1];
-                var name = m[2];
-                var patternRaw = m[3];
-                var targetsRaw = m[4] || "";
+                var name = m[2].trim();
+                var patternRaw = m[3].trim();
+                var targetsRaw = (m[4] || "").trim();
 
                 // Normal
                 var regex = "";
@@ -121,6 +126,23 @@ var Told;
                 };
             });
 
+            // Create debug string
+            entries.forEach(function (e) {
+                var indentation = (function () {
+                    var s = "";
+                    for (var i = 0; i < e.indentLevel; i++) {
+                        s += " ";
+                    }
+                    return s;
+                })();
+
+                var r = " " + e.regex + (e.isOpenEnded ? "..." : "") + (e.targets.length > 0 ? (" {{" + e.targets.join(",") + "}}") : "");
+
+                var c = " [" + e.copyPatternName + (e.copyPatternInput !== "" ? ("(" + e.copyPatternInput + ")") : "") + "]";
+
+                e._debug = "" + indentation + "-" + e.name + ":" + (r.trim().length > 0 ? r : c);
+            });
+
             // Assign the children to their parents
             var lastEntry = null;
 
@@ -138,12 +160,28 @@ var Told;
                 lastEntry = e;
             });
 
+            var roots = entries.filter(function (e) {
+                return e.parent === null;
+            });
+
+            var writeChildrenDebug = function (e, indent) {
+                if (e === null) {
+                    return;
+                }
+                return e.children.map(function (c) {
+                    return indent + c._debug + "\r\n" + writeChildrenDebug(c, indent + "\t");
+                }).join("");
+            };
+
+            var d = roots.map(function (e) {
+                return e._debug + "\r\n" + writeChildrenDebug(e, "\t");
+            }).join("\r\n");
+
             return {
+                _debug: d,
                 replacements: replacements,
                 entries: entries,
-                roots: entries.filter(function (e) {
-                    return e.parent === null;
-                })
+                roots: roots
             };
         }
         DSL.parseDslDefinition = parseDslDefinition;

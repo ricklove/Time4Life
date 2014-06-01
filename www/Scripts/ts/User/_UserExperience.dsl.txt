@@ -62,17 +62,24 @@ $: end of context
 		
 - partContent: ...
 	- header: ^[ (\word) : (\word) ] (\line)\r {{type,name,title}}
-	- enum: @(\word){(.*)} {{name,...}}
+	- enum: @(\word){(.*?)} {{name,...}}
 		- value: \n (\line) \r {{.}}
 	- list: [list]
 	- node: [node]
 
 // Capture a whole list (or sublist)
-- list: (\n\t{@0}-[^\n]+(?:\n\t{@0}[^\n]+)*) {{...}}
-	- listItem: \n\t{@0}-...\r
-		- enumerable: [(\ref)] (reference)
+// Continue on:
+// - Same Level with list marker at beginning
+//		Indented level
+//
+// ^---(Or blank line)
+- list: (\n\t{@0}-[^\n]+(?:\n\r|\n\t{@0}(?:-|\t)[^\n]+)*) {{...}}
+	- listItem: \n\t{@0}-...
+		- header: ^\n\t{@0}-...\r
+			- enumerable: [(\ref)] {{reference}}
+			- node: [node]
+		- list: [listItem(+1)]
 		- node: [node]
-	- list: [listItem(+1)]
 
 - node: ...
 	- control: [control]

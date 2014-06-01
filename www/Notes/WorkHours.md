@@ -137,8 +137,9 @@ I will create a simple DSL to define the User Interface and Workflow. This will 
 ### 11:15-12:00 !DSL
 ### 15:00-15:51 !DSL
 ### 16:11-16:24 !DSL
-### 17:11-16:24 !DSL
-### 2014-06-01 5:30-7:45 !DSL
+### 17:11-17:24 !DSL
+### 2014-06-01 5:30-7:58 !DSL
+### 16:09-17:22 !DSL
 
 - Write DSL Parser
 
@@ -146,6 +147,9 @@ I will create a simple DSL to define the User Interface and Workflow. This will 
 
 ---
 # FUTURE TASKS
+
+- DSL Parser
+	- Parse @0 values
 
 - Complete benefits analysis (30)
 - Create DSL for User Experience (60)

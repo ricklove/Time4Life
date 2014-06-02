@@ -25,9 +25,15 @@
 
     <script type="text/javascript">
         var def;
+        var dsl;
         Told.DSL.loadDslDefinition("Scripts/ts/User/_UserExperience.dsl.txt",
             function (d) {
                 def = d;
+
+                Told.DSL.loadDsl("Scripts/ts/User/_UserExperience.txt", def, function (dslValue) {
+                    dsl = dslValue;
+                }, function () { });
+
             }, function () { });
     </script>
 

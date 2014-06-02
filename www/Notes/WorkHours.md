@@ -148,9 +148,9 @@ I will create a simple DSL to define the User Interface and Workflow. This will 
 - DSL Definition Parser
 	- Parse @0 values
 
-### 2014-06-02 6:35- !DSL
+### 2014-06-02 6:35-7:28 !DSL
 
-- Use DSL Definition to Parse DSL
+- Begin: Use DSL Definition to Parse DSL
 
 
 

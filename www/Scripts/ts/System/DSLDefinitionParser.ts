@@ -54,7 +54,10 @@ module Told.DSL {
     export function loadDslDefinition(documentUrl: string, onLoaded: (definition: IDslDefinition) => void, onError: (message: string) => void) {
         var url = documentUrl;
 
-        Told.Utils.loadTextFile(documentUrl, text=> { return parseDslDefinition(text); }, onError);
+        Told.Utils.loadTextFile(documentUrl, text=> {
+            var def = parseDslDefinition(text);
+            onLoaded(def);
+        }, onError);
     }
 
     export function parseDslDefinition(documentText: string): IDslDefinition {

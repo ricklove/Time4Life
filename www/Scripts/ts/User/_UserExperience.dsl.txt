@@ -83,7 +83,7 @@ $: end of context
 
 - node: ...
 	- control: [control]
-	- text: (.*) {.}
+	- text: ... {.}
 
 - control: < (\word) \( ([^\r\)]) \) > (\lineNoParens?) \( (\lineNoParens) \) {{type, ..., label, hint}}
 	- input: ...(?:,|$)

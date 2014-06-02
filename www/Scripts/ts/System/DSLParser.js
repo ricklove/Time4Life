@@ -1,239 +1,87 @@
 ﻿/// <reference path="Told.Utils.ts" />
+/// <reference path="DSLDefinitionParser.ts" />
 var Told;
 (function (Told) {
     (function (DSL) {
-        
-
-        
-
-        function loadDslDefinition(documentUrl, onLoaded, onError) {
+        function loadDsl(documentUrl, dslDefinition, onLoaded, onError) {
             var url = documentUrl;
 
             Told.Utils.loadTextFile(documentUrl, function (text) {
-                return parseDslDefinition(text);
+                var dsl = parseDsl(text, dslDefinition);
+                onLoaded(dsl);
             }, onError);
         }
-        DSL.loadDslDefinition = loadDslDefinition;
+        DSL.loadDsl = loadDsl;
 
-        function parseDslDefinition(documentText) {
-            var docText = documentText.replace(/\r?\n/g, "\r\n");
-            var aParts = docText.split("\r\n# REPLACEMENTS:");
-            var bParts = aParts[1].split("\r\n# PATTERNS:");
+        function parseDsl(documentText, dslDefinition) {
+            var dd = dslDefinition;
+            var textRaw = documentText;
 
-            var replacementLines = bParts[0].split("\r\n");
-            var entryLines = bParts[1].split("\r\n");
+            // Normalize document
+            var text = documentText;
 
-            // Parse each replacement
-            var rxReplacement = /^(.*)=(.*)/;
-            var replacements = replacementLines.filter(function (l) {
-                return l.indexOf("=") > 0;
-            }).map(function (l) {
-                var m = l.match(rxReplacement);
-                return { input: m[1], output: m[2] };
-            });
+            // Add blank lines at borders
+            text = "\r\n" + text + "\r\n";
 
-            // I'm not sure why this is sorting the longest first
-            replacements = replacements.sort(function (a, b) {
-                return -(a.input.length - b.input.length);
-            });
+            text = text.replace(/\r?\n/g, "\r\n").replace(/\r\n\s*\/\/[^\r]*/g, "").replace(/\r\n(\s*\r\n)+/g, "\r\n\r\n");
 
-            // Parse each pattern
-            // - header: $[ (\word) : (\word) ] (\line)\r {{ type, name, title }}
-            // - part: \n#{@1}[^#]...
-            //	  - content: [partContent]
-            //	  - part: [part(+1)]
-            var rxMainPattern = Told.Utils.expandSimpleRegex(/^( )- (`word) : (`not'{{'*) (?:{{ (`not'}}'*) }})? $/.source);
+            var textNormalized = text;
 
-            // Copy pattern
-            // [partContent]
-            // [part(+1)]
-            var rxCopyPattern = new RegExp(Told.Utils.expandSimpleRegex(/^ \[ (`word) (?:\( \+ (\d) \))? \] $/.source));
+            // Use the definition to parse the document
+            var splitAndProcessParts = function (textPart, defSiblings) {
+                // Create regex from siblings
+                var r = "";
 
-            // Regex variables
-            // \n#{@1}[^#]
-            var rxRegexVariable = /@\d/g;
+                defSiblings.forEach(function (s) {
+                    // Get the copy if it is defined
+                    var regexSource;
 
-            var entries = entryLines.filter(function (l) {
-                return l.trim()[0] === "-";
-            }).map(function (l) {
-                var m = l.match(rxMainPattern);
-                var indent = m[1];
-                var name = m[2].trim();
-                var patternRaw = m[3].trim();
-                var targetsRaw = (m[4] || "").trim();
+                    if (s.copyPatternName !== "") {
+                        var mCopies = dd.roots.filter(function (r) {
+                            return r.name === s.copyPatternName;
+                        });
 
-                // Normal
-                var regex = "";
-                var isOpenEnded = false;
-                var targets = [];
-                var regexVariables = [];
+                        if (mCopies.length > 1) {
+                            throw "Definition has multiple root entities called '" + s.copyPatternName + "'";
+                        } else if (mCopies.length < 1) {
+                            throw "Definition has no root entities called '" + s.copyPatternName + "'";
+                        }
 
-                // CopyPattern
-                var copyPatternName = "";
-                var copyPatternInput = null;
-
-                // Children
-                var indentLevel = indent.replace(/\t/g, "    ").length;
-
-                // Sub pattern matching
-                var mCopyPattern = patternRaw.trim().match(rxCopyPattern);
-
-                if (targetsRaw !== "") {
-                    // Regex pattern
-                    regex = patternRaw;
-                    targets = targetsRaw.split(",").map(function (t) {
-                        return t.trim();
-                    });
-                } else if (mCopyPattern !== null) {
-                    // CopyPattern
-                    copyPatternName = mCopyPattern[1];
-                    copyPatternInput = parseInt(mCopyPattern[2] || "");
-                } else {
-                    // Regex pattern with ... target
-                    var rxOpenEnded = /\.\.\.$/;
-
-                    if (patternRaw.trim().match(rxOpenEnded)) {
-                        // Open ended
-                        regex = patternRaw.trim().replace(rxOpenEnded, "");
-                        isOpenEnded = true;
+                        regexSource = mCopies[0];
                     } else {
-                        // Lazy
-                        regex = patternRaw.replace(/\.\.\./g, "(?:.*?)");
+                        regexSource = s;
                     }
 
-                    targets = ["..."];
-                }
-
-                // Do replacements on the regex
-                if (regex !== "") {
-                    var text = regex;
-
-                    replacements.forEach(function (r) {
-                        text = Told.Utils.replaceAll(text, r.input, r.output);
-                    });
-
-                    regex = text;
-                }
-
-                // Find regex variables
-                if (regex !== "") {
-                    var mVars = regex.match(rxRegexVariable);
-
-                    if (mVars !== null) {
-                        for (var iMatch = 0; iMatch < mVars.length; iMatch++) {
-                            var mVar = mVars[iMatch];
-
-                            if (!regexVariables.some(function (v) {
-                                return v.text === mVar;
-                            })) {
-                                regexVariables.push({
-                                    defaultValue: parseInt(mVar.substr(1)),
-                                    text: mVar
-                                });
-                            }
-                        }
-                    }
-                }
-
-                return {
-                    rawText: l,
-                    name: name,
-                    patternRaw: patternRaw,
-                    targetsRaw: targetsRaw,
-                    regex: regex,
-                    isOpenEnded: isOpenEnded,
-                    targets: targets,
-                    regexVariables: regexVariables,
-                    copyPatternName: copyPatternName,
-                    copyPatternInput: copyPatternInput,
-                    indentLevel: indentLevel,
-                    children: [],
-                    parent: null
-                };
-            });
-
-            // Assign the children to their parents
-            var lastEntry = null;
-
-            entries.forEach(function (e) {
-                if (lastEntry !== null) {
-                    if (e.indentLevel > lastEntry.indentLevel) {
-                        // Child of last
-                        e.parent = lastEntry;
-                    } else if (e.indentLevel === lastEntry.indentLevel) {
-                        // Sibling to last
-                        e.parent = lastEntry.parent;
-                    } else {
-                        while (e.indentLevel < lastEntry.indentLevel) {
-                            lastEntry = lastEntry.parent;
-                        }
-
-                        if (e.indentLevel > lastEntry.indentLevel) {
-                            // Child (This should not happen unless the list is malformed)
-                            e.parent = lastEntry;
-                        } else if (e.indentLevel === lastEntry.indentLevel) {
-                            // Sibling
-                            e.parent = lastEntry.parent;
-                        }
-                    }
-
-                    if (e.parent !== null) {
-                        e.parent.children.push(e);
-                    }
-                }
-
-                lastEntry = e;
-            });
-
-            var roots = entries.filter(function (e) {
-                return e.parent === null;
-            });
-
-            // Create debug strings
-            entries.forEach(function (e) {
-                var indentation = (function () {
-                    var s = "";
-                    for (var i = 0; i < e.indentLevel; i++) {
-                        s += " ";
-                    }
-                    return s;
-                })();
-
-                var regexStr = e.regex;
-
-                e.regexVariables.forEach(function (v) {
-                    return regexStr = Told.Utils.replaceAll(regexStr, v.text, "#" + v.defaultValue);
+                    throw "Not Implemented";
                 });
 
-                var r = " " + regexStr + (e.isOpenEnded ? "..." : "") + (e.targets.length > 0 ? (" {{" + e.targets.join(",") + "}}") : "");
+                // This will split like:
+                // PRETEXT, M1, MIDTEXT, M2, MIDTEXT, M3, POSTTEXT
+                var parts = textPart.split(new RegExp(r));
 
-                var c = " [" + e.copyPatternName + (e.copyPatternInput !== null ? ("(" + e.copyPatternInput + ")") : "") + "]";
-
-                e._debug = "" + indentation + "-" + e.name + ":" + (r.trim().length > 0 ? r : c);
-            });
-
-            var writeChildrenDebug = function (e, indent) {
-                if (e === null) {
-                    return;
-                }
-                return e.children.map(function (c) {
-                    return indent + c._debug.trim() + "\r\n" + writeChildrenDebug(c, indent + "\t");
-                }).join("");
+                throw "Not Implemented";
             };
 
-            var d = roots.map(function (e) {
-                return e._debug.trim() + "\r\n" + writeChildrenDebug(e, "\t");
-            }).join("\r\n");
+            // Start with "ROOT" (ignore its pattern)
+            var rootDef = dd.roots.filter(function (r) {
+                return r.name === "ROOT";
+            })[0];
+            var rootNodes = splitAndProcessParts(text, rootDef.children);
+            var rootNode = {
+                rawText: text,
+                children: rootNodes,
+                variableNames: []
+            };
 
-            // Return definition
+            throw "breakdance";
+
             return {
-                _debug: d,
-                replacements: replacements,
-                entries: entries,
-                roots: roots
+                documentTextRaw: textRaw,
+                documentTextNormalized: textNormalized,
+                root: rootNode
             };
         }
-        DSL.parseDslDefinition = parseDslDefinition;
+        DSL.parseDsl = parseDsl;
     })(Told.DSL || (Told.DSL = {}));
     var DSL = Told.DSL;
 })(Told || (Told = {}));

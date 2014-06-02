@@ -70,36 +70,79 @@ var Told;
 
                 // Create the split regex
                 // TODO: Handle the "..." catch all
-                var r = "(" + defTypes.map(function (p) {
+                // If a catch all is first, it will catch the pretext
+                // If a catch all is last, it will only catch left over posttext
+                // If there are still left over posttext, the first catch all will get it
+                var captureAllDefs = defTypes.filter(function (d) {
+                    return d.regex === "" && d.isOpenEnded;
+                });
+                var matchingDefs = defTypes.filter(function (d) {
+                    return d.regex !== "" || !d.isOpenEnded;
+                });
+
+                var r = "(" + matchingDefs.map(function (p) {
                     return p.regex;
                 }).join("|") + ")";
 
                 // This will split like:
-                // PRETEXT, M1, MIDTEXT, M2, MIDTEXT, M3, POSTTEXT
-                var parts = textPart.split(new RegExp(r));
-                var partWasUsed = [];
+                // parts=           PRETEXT,     MIDTEXT,    MIDTEXT,    POSTTEXT
+                // exactMatches=    M1,          M2,         M3
+                // replace trick to find exact matches
+                var parts = [];
+                var exactMatches = [];
+                var lastOffset = 0;
+
+                textPart.replace(new RegExp(r, "g"), function () {
+                    var m = arguments[0];
+                    var offset = arguments[arguments.length - 2];
+
+                    parts.push({ text: textPart.substr(lastOffset, offset - lastOffset) });
+                    exactMatches.push(m);
+
+                    lastOffset = offset + m.length;
+
+                    return m;
+                });
+
+                parts.push({ text: textPart.substr(lastOffset) });
 
                 var nodes = [];
 
-                for (var iPart = 1; iPart < parts.length; iPart += 2) {
-                    var preText = parts[iPart - 1];
-                    var matchText = parts[iPart];
-                    var postText = parts[iPart + 1];
+                // Find the specific def that was matched for each part
+                var addCaptureAllNode = function (part, isFirst) {
+                    // Any parts not used will be matched to capture all:
+                    // First leftover will match first capture all
+                    // Other leftovers will match last capture all
+                    if (part.wasUsed || captureAllDefs.length === 0) {
+                        return;
+                    }
 
-                    var mType = defTypes.filter(function (t) {
+                    var caDef = isFirst ? captureAllDefs[0] : captureAllDefs[captureAllDefs.length - 1];
+
+                    nodes.push({
+                        rawText: part.text,
+                        type: caDef.type,
+                        valueNames: [],
+                        values: [],
+                        _childrenText: part.text,
+                        _childrenDefs: caDef.children,
+                        _childrenVariableAdjustement: caDef.variableAdjustment,
+                        childrenNodes: null
+                    });
+                };
+
+                for (var iMatch = 0; iMatch < exactMatches.length; iMatch++) {
+                    var prePart = parts[iMatch];
+                    var matchText = exactMatches[iMatch];
+                    var postPart = parts[iMatch + 1];
+                    var postText = postPart.text;
+
+                    var mType = matchingDefs.filter(function (t) {
                         return matchText.match(t.regex) !== null;
                     })[0];
 
-                    if (!partWasUsed[iPart - 1]) {
-                        partWasUsed[iPart - 1] = true;
-                    } else {
-                        preText = "";
-                    }
-
-                    partWasUsed[iPart] = true;
-
                     if (mType.isOpenEnded) {
-                        partWasUsed[iPart + 1] = true;
+                        postPart.wasUsed = true;
                     } else {
                         postText = "";
                     }
@@ -113,24 +156,43 @@ var Told;
                     var values = {};
                     var subText = postText;
 
-                    for (var iMatch = 0; iMatch < mValues.length; iMatch++) {
-                        var vName = valueNames[iMatch];
+                    for (var iValue = 0; iValue < mValues.length; iValue++) {
+                        var vName = valueNames[iValue];
                         if (vName !== "...") {
-                            values[vName] = mValues[iMatch];
+                            values[vName] = mValues[iValue];
                         } else {
-                            subText = mValues[iMatch];
+                            subText = mValues[iValue];
                         }
                     }
 
+                    addCaptureAllNode(prePart, iMatch === 0);
+
                     nodes.push({
-                        _preText: preText,
-                        rawText: preText + matchText + postText,
+                        rawText: matchText + postText,
                         type: mType.type,
                         valueNames: valueNames,
                         values: values,
-                        children: splitAndProcessParts(subText, mType.children, mType.variableAdjustment)
+                        _childrenText: subText,
+                        _childrenDefs: mType.children,
+                        _childrenVariableAdjustement: mType.variableAdjustment,
+                        childrenNodes: null
                     });
+
+                    addCaptureAllNode(postPart, false);
+                    //throw "breakdance";
                 }
+
+                // Go deeper
+                nodes.forEach(function (n) {
+                    var breakdance = true;
+
+                    //throw "breakdance";
+                    //if (n.type === "part") {
+                    n.childrenNodes = splitAndProcessParts(n._childrenText, n._childrenDefs, n._childrenVariableAdjustement);
+                    //  }
+                });
+
+                throw "breakdance";
 
                 return nodes;
             };
@@ -143,7 +205,10 @@ var Told;
             var rootNode = {
                 rawText: text,
                 type: "ROOT",
-                children: rootNodes,
+                _childrenText: text,
+                _childrenDefs: rootDef.children,
+                _childrenVariableAdjustement: 0,
+                childrenNodes: rootNodes,
                 valueNames: [],
                 values: {}
             };

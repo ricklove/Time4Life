@@ -154,13 +154,17 @@ I will create a simple DSL to define the User Interface and Workflow. This will 
 
 - Begin: Use DSL Definition to Parse DSL
 
-
+### 2014-06-02 9:43-10:10 !DSL
+### 2014-06-02 10:52- !DSL
+- Begin: Use DSL Definition to Parse DSL
+	- Begin: Handle the "..." catch all
 
 
 ---
 # FUTURE TASKS
 
-
+- Use DSL Definition to Parse DSL
+	- TODO: Handle the "..." catch all
 
 - Complete benefits analysis (30)
 - Create DSL for User Experience (60)

@@ -33,15 +33,21 @@ module Told.DSL {
         regex: string;
         isOpenEnded: boolean;
         targets: string[];
+        regexVariables: IRegexVariable[];
 
         // CopyPattern
         copyPatternName: string;
-        copyPatternInput: string;
+        copyPatternInput: number;
 
         // Children
         indentLevel: number;
         children: IDslDefinitionEntry[];
         parent: IDslDefinitionEntry;
+    }
+
+    export interface IRegexVariable {
+        text: string;
+        defaultValue: number;
     }
 
 
@@ -83,8 +89,12 @@ module Told.DSL {
         // [partContent]
         // [part(+1)]
         var rxCopyPattern = new RegExp(Told.Utils.expandSimpleRegex(
-            /^ \[ (`word) (?:\( (\+\d) \))? \] $/.source
+            /^ \[ (`word) (?:\( \+ (\d) \))? \] $/.source
             ));
+
+        // Regex variables
+        // \n#{@1}[^#]
+        var rxRegexVariable = /@\d/g;
 
         var entries: IDslDefinitionEntry[] = entryLines.filter(l=> l.trim()[0] === "-").map(l=> {
             var m = l.match(rxMainPattern);
@@ -98,10 +108,11 @@ module Told.DSL {
             var regex: string = "";
             var isOpenEnded: boolean = false;
             var targets: string[] = [];
+            var regexVariables: IRegexVariable[] = [];
 
             // CopyPattern
             var copyPatternName: string = "";
-            var copyPatternInput: string = "";
+            var copyPatternInput: number = null;
 
             // Children
             var indentLevel = indent.replace(/\t/g, "    ").length;
@@ -118,7 +129,7 @@ module Told.DSL {
             } else if (mCopyPattern !== null) {
                 // CopyPattern
                 copyPatternName = mCopyPattern[1];
-                copyPatternInput = mCopyPattern[2] || "";
+                copyPatternInput = parseInt(mCopyPattern[2] || "");
 
             } else {
                 // Regex pattern with ... target
@@ -148,6 +159,25 @@ module Told.DSL {
                 regex = text;
             }
 
+            // Find regex variables
+            if (regex !== "") {
+                var mVars = regex.match(rxRegexVariable);
+
+                if (mVars !== null) {
+                    for (var iMatch = 0; iMatch < mVars.length; iMatch++) {
+
+                        var mVar = mVars[iMatch];
+
+                        if (!regexVariables.some(v=> v.text === mVar)) {
+                            regexVariables.push({
+                                defaultValue: parseInt(mVar.substr(1)),
+                                text: mVar
+                            });
+                        }
+                    }
+                }
+            }
+
             return {
                 rawText: l,
                 name: name,
@@ -157,6 +187,7 @@ module Told.DSL {
                 regex: regex,
                 isOpenEnded: isOpenEnded,
                 targets: targets,
+                regexVariables: regexVariables,
 
                 copyPatternName: copyPatternName,
                 copyPatternInput: copyPatternInput,
@@ -218,13 +249,16 @@ module Told.DSL {
                 return s;
             })();
 
-            var r = " " + e.regex
+            var regexStr = e.regex;
+
+            e.regexVariables.forEach(v=> regexStr = Told.Utils.replaceAll(regexStr, v.text, "#" + v.defaultValue));
+
+            var r = " " + regexStr
                 + (e.isOpenEnded ? "..." : "")
                 + (e.targets.length > 0 ? (" {{" + e.targets.join(",") + "}}") : "");
 
-
             var c = " [" + e.copyPatternName
-                + (e.copyPatternInput !== "" ? ("(" + e.copyPatternInput + ")") : "")
+                + (e.copyPatternInput !== null ? ("(" + e.copyPatternInput + ")") : "")
                 + "]";
 
             e._debug = ""

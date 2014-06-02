@@ -47,7 +47,11 @@ var Told;
             // Copy pattern
             // [partContent]
             // [part(+1)]
-            var rxCopyPattern = new RegExp(Told.Utils.expandSimpleRegex(/^ \[ (`word) (?:\( (\+\d) \))? \] $/.source));
+            var rxCopyPattern = new RegExp(Told.Utils.expandSimpleRegex(/^ \[ (`word) (?:\( \+ (\d) \))? \] $/.source));
+
+            // Regex variables
+            // \n#{@1}[^#]
+            var rxRegexVariable = /@\d/g;
 
             var entries = entryLines.filter(function (l) {
                 return l.trim()[0] === "-";
@@ -62,10 +66,11 @@ var Told;
                 var regex = "";
                 var isOpenEnded = false;
                 var targets = [];
+                var regexVariables = [];
 
                 // CopyPattern
                 var copyPatternName = "";
-                var copyPatternInput = "";
+                var copyPatternInput = null;
 
                 // Children
                 var indentLevel = indent.replace(/\t/g, "    ").length;
@@ -82,7 +87,7 @@ var Told;
                 } else if (mCopyPattern !== null) {
                     // CopyPattern
                     copyPatternName = mCopyPattern[1];
-                    copyPatternInput = mCopyPattern[2] || "";
+                    copyPatternInput = parseInt(mCopyPattern[2] || "");
                 } else {
                     // Regex pattern with ... target
                     var rxOpenEnded = /\.\.\.$/;
@@ -110,6 +115,26 @@ var Told;
                     regex = text;
                 }
 
+                // Find regex variables
+                if (regex !== "") {
+                    var mVars = regex.match(rxRegexVariable);
+
+                    if (mVars !== null) {
+                        for (var iMatch = 0; iMatch < mVars.length; iMatch++) {
+                            var mVar = mVars[iMatch];
+
+                            if (!regexVariables.some(function (v) {
+                                return v.text === mVar;
+                            })) {
+                                regexVariables.push({
+                                    defaultValue: parseInt(mVar.substr(1)),
+                                    text: mVar
+                                });
+                            }
+                        }
+                    }
+                }
+
                 return {
                     rawText: l,
                     name: name,
@@ -118,6 +143,7 @@ var Told;
                     regex: regex,
                     isOpenEnded: isOpenEnded,
                     targets: targets,
+                    regexVariables: regexVariables,
                     copyPatternName: copyPatternName,
                     copyPatternInput: copyPatternInput,
                     indentLevel: indentLevel,
@@ -173,9 +199,15 @@ var Told;
                     return s;
                 })();
 
-                var r = " " + e.regex + (e.isOpenEnded ? "..." : "") + (e.targets.length > 0 ? (" {{" + e.targets.join(",") + "}}") : "");
+                var regexStr = e.regex;
 
-                var c = " [" + e.copyPatternName + (e.copyPatternInput !== "" ? ("(" + e.copyPatternInput + ")") : "") + "]";
+                e.regexVariables.forEach(function (v) {
+                    return regexStr = Told.Utils.replaceAll(regexStr, v.text, "#" + v.defaultValue);
+                });
+
+                var r = " " + regexStr + (e.isOpenEnded ? "..." : "") + (e.targets.length > 0 ? (" {{" + e.targets.join(",") + "}}") : "");
+
+                var c = " [" + e.copyPatternName + (e.copyPatternInput !== null ? ("(" + e.copyPatternInput + ")") : "") + "]";
 
                 e._debug = "" + indentation + "-" + e.name + ":" + (r.trim().length > 0 ? r : c);
             });

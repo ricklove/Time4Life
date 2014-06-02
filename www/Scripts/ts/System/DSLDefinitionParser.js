@@ -33,7 +33,6 @@ var Told;
                 return { input: m[1], output: m[2] };
             });
 
-            // I'm not sure why this is sorting the longest first
             replacements = replacements.sort(function (a, b) {
                 return -(a.input.length - b.input.length);
             });
@@ -88,7 +87,8 @@ var Told;
                 } else if (mCopyPattern !== null) {
                     // CopyPattern
                     copyPatternName = mCopyPattern[1];
-                    copyPatternInput = parseInt(mCopyPattern[2] || "");
+                    copyPatternInput = parseInt(mCopyPattern[2]);
+                    copyPatternInput = isNaN(copyPatternInput) ? null : copyPatternInput;
                 } else {
                     // Regex pattern with ... target
                     var rxOpenEnded = /\.\.\.$/;

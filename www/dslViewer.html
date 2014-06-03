@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Time4Life</title>
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel="stylesheet" href="Styles/css/Simple.css">
+
+    <!-- Testing Framework -->
+    <link rel="stylesheet" href="Styles/css/External/qunit.css">
+</head>
+<body>
+
+    <div id="dslDefinition" style="white-space: pre"></div>
+    <div id="dsl" style="white-space: pre"></div>
+
+    <!-- Dependencies -->
+    <script src="Scripts/js/External/jquery.min.js"></script>
+    <script src="Scripts/ts/System/Told.Utils.js"></script>
+    <script src="Scripts/ts/System/DSLDefinitionParser.js"></script>
+    <script src="Scripts/ts/System/DSLParser.js"></script>
+
+    <script type="text/javascript">
+        var def;
+        var dsl;
+        Told.DSL.loadDslDefinition("Scripts/ts/User/_UserExperience.dsl.txt",
+            function (d) {
+                def = d;
+
+                $("#dslDefinition").text(def._debug);
+
+                Told.DSL.loadDsl("Scripts/ts/User/_UserExperience.txt", def, function (dslValue) {
+                    dsl = dslValue;
+                    $("#dsl").text(dsl.root._debugAll);
+
+                }, function () { });
+
+            }, function () { });
+    </script>
+
+
+
+</body>
+</html>

@@ -11,6 +11,8 @@ module Told.DSL {
     }
 
     export interface IDslNode {
+        _debug?: string;
+        _debugAll?: string;
         _preText?: string;
         rawText: string;
 
@@ -25,6 +27,7 @@ module Told.DSL {
         childrenNodes: IDslNode[];
 
         // Values are dynamically created
+        value: string; // {{.}}
         valueNames: string[];
         values: any;
     }
@@ -63,6 +66,8 @@ module Told.DSL {
 
         // Use the definition to parse the document
         var splitAndProcessParts = (textPart: string, defSiblings: IDslDefinitionEntry[], variableBase: number): IDslNode[]=> {
+
+            if (textPart === "") { return []; }
 
             // Get the sibling patterns
             var defTypes = defSiblings.map(s=> {
@@ -146,7 +151,10 @@ module Told.DSL {
                 // Any parts not used will be matched to capture all:
                 // First leftover will match first capture all
                 // Other leftovers will match last capture all
-                if (part.wasUsed || captureAllDefs.length === 0) {
+                if (part.wasUsed
+                    || captureAllDefs.length === 0
+                    || part.text === ""
+                    || (part.text.length < 2 && part.text.trim().length === 0)) {
                     return;
                 }
 
@@ -158,6 +166,7 @@ module Told.DSL {
                     type: caDef.type,
                     valueNames: [],
                     values: [],
+                    value: "",
 
                     _childrenText: part.text,
                     _childrenDefs: caDef.children,
@@ -181,23 +190,43 @@ module Told.DSL {
                     postText = "";
                 }
 
+                // DEBUG
+                if (mType.type === "text") {
+                    var breakdance = true;
+                }
+
+                // Get the actual match
                 var mValues = matchText.match(mType.regex);
+
+                if (mValues.length > 1) {
+                    var breakdance = true;
+                }
+
                 // Skip the whole match
                 mValues.shift();
 
+
+
                 var valueNames = mType.valueNames;
+                var value: string = "";
                 var values = {};
                 var subText = postText;
 
                 for (var iValue = 0; iValue < mValues.length; iValue++) {
 
                     var vName = valueNames[iValue];
-                    if (vName !== "...") {
-                        values[vName] = mValues[iValue];
-                    } else {
+
+                    if (vName === "...") {
                         subText = mValues[iValue];
+                    } else if (vName === ".") {
+                        value = mValues[iValue];
+                    } else {
+                        values[vName] = mValues[iValue];
                     }
                 }
+
+                // Remove ...
+                valueNames = valueNames.filter(v=> v !== "..." && v !== ".");
 
                 addCaptureAllNode(prePart, iMatch === 0);
 
@@ -206,6 +235,7 @@ module Told.DSL {
 
                     type: mType.type,
                     valueNames: valueNames,
+                    value: value,
                     values: values,
                     _childrenText: subText,
                     _childrenDefs: mType.children,
@@ -218,16 +248,48 @@ module Told.DSL {
                 //throw "breakdance";
             }
 
+            if (parts.length === 1) {
+                addCaptureAllNode(parts[0], true);
+            }
+
             // Go deeper
             nodes.forEach(n=> {
-                var breakdance = true;
-                //throw "breakdance";
-                //if (n.type === "part") {
-                n.childrenNodes = splitAndProcessParts(n._childrenText, n._childrenDefs, n._childrenVariableAdjustement)
-                  //  }
+
+                if (n.type === "text") {
+                    var breakdance = true;
+                }
+
+                // Handle '...' with no children
+                if (n._childrenDefs.length === 0) {
+                    n.value = n._childrenText;
+                    n.childrenNodes = [];
+                } else {
+                    n.childrenNodes = splitAndProcessParts(n._childrenText, n._childrenDefs, n._childrenVariableAdjustement);
+                }
             });
 
-            throw "breakdance";
+            // Debug
+            nodes.forEach(n=> {
+                var debug =
+                    n.type + ":"
+                    + (n.value !== "" ? (" '" + n.value + "'") : "")
+                    + n.valueNames.map(v=> " " + v + "='" + (n.values[v] || "") + "'").join(",")
+                ;
+
+                n._debug = debug;
+                n._debugAll = debug;
+            });
+
+            // Debug All
+            nodes.forEach(n=> {
+                n._debugAll = n._debugAll
+                + "\r\n\t"
+                + n.childrenNodes.map(c=> Told.Utils.replaceAll(c._debugAll, "\r\n", "\r\n\t")).join("\r\n\t");
+
+                n._debugAll = n._debugAll.trim();
+            });
+
+            //throw "breakdance";
 
             return nodes;
         };
@@ -244,12 +306,21 @@ module Told.DSL {
             _childrenVariableAdjustement: 0,
             childrenNodes: rootNodes,
 
+            value: "",
             valueNames: [],
             values: {},
         }
 
+        // Debug All
+        rootNode._debugAll = "ROOT"
+        + "\r\n\t"
+        + rootNode.childrenNodes.map(c=> Told.Utils.replaceAll(c._debugAll, "\r\n", "\r\n\t")).join("\r\n\t");
+
+        rootNode._debugAll = rootNode._debugAll.trim();
+
+
         // Automatic breakpoint
-        throw "breakdance";
+        //throw "breakdance";
 
         return {
             documentTextRaw: textRaw,

@@ -122,7 +122,8 @@ module Told.DSL {
             // Sub pattern matching
             var mCopyPattern = patternRaw.trim().match(rxCopyPattern);
 
-
+            // TODO: Fix priority ... check first
+            // ... can happen with targets
             if (targetsRaw !== "") {
                 // Regex pattern
                 regex = patternRaw;
@@ -136,7 +137,6 @@ module Told.DSL {
 
             } else {
                 // Regex pattern with ... target
-
                 var rxOpenEnded = /\.\.\.$/;
 
                 if (patternRaw.trim().match(rxOpenEnded)) {
@@ -179,6 +179,11 @@ module Told.DSL {
                         }
                     }
                 }
+            }
+
+            if (regex !== "") {
+                // Test it
+                var rTest = new RegExp(regex);
             }
 
             return {

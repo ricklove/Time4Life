@@ -44,12 +44,13 @@ $: end of context
 # REPLACEMENTS:
 
  =\s*
-\t=(?:\t| {4})
+\t=(?:\t|\s{4})
 \word=(?:\w+)
-\ref=(?:(\w+.)*\w+)
+\ref=(?:(\w+\.)*\w+)
 \line=(?:[^\r]+)
 \lineNoParens=(?:[^\r\(]+)
 \lineNoQuotes=(?:[^\r"]+)
+\notCloseBrace=(?:[^\}]+)
 
 # PATTERNS:
 
@@ -61,8 +62,8 @@ $: end of context
 	- part: [part(+1)]
 		
 - partContent: ...
-	- header: ^[ (\word) : (\word) ] (\line)\r {{type,name,title}}
-	- enum: @(\word){(.*?)} {{name,...}}
+	- header: ^ \[ (\word) : (\word) \] (\line)\r {{type,name,title}}
+	- enum: \@ (\word) \{ (\notCloseBrace) \} {{name,...}}
 		- value: \n (\line) \r {{.}}
 	- list: [list]
 	- node: [node]
@@ -75,17 +76,17 @@ $: end of context
 // ^---(Or blank line)
 - list: (\n\t{@0}-[^\n]+(?:\n\r|\n\t{@0}(?:-|\t)[^\n]+)*) {{...}}
 	- listItem: \n\t{@0}-...
-		- header: ^\n\t{@0}-...\r
-			- enumerable: [(\ref)] {{reference}}
+		- header: ^ ([^\r]*) \r {{...}}
+			- enumerable: \[(\ref)\] {{reference}}
 			- node: [node]
-		- list: [listItem(+1)]
+		- list: [list(+1)]
 		- node: [node]
 
 - node: ...
 	- control: [control]
-	- text: ... {.}
+	- text: ...
 
-- control: < (\word) \( ([^\r\)]) \) > (\lineNoParens?) \( (\lineNoParens) \) {{type, ..., label, hint}}
+- control: < (\word) \( (\lineNoParens) \) > (\lineNoParens?) \( (\lineNoParens) \) {{type, ..., label, hint}}
 	- input: ...(?:,|$)
 		- enum:	@(\word) {{.}}
 		- variable: (\ref) {{.}}

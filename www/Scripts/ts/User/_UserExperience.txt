@@ -43,7 +43,7 @@ Begin by considering what is really important in your life:
 <Button("Next")> Next (Go to $[Page.Next.Label])
 
 
-## [Priorities] Priorities
+## [Page:Priorities] Priorities
 
 Now, consider which of your values are most important:
 
@@ -57,7 +57,7 @@ Now, consider which of your values are most important:
 <Button("Back")> Back (Go back to $[Page.Previous.Label])
 <Button("Next")> Next (Go to $[Page.Next.Label])
 
-## [Time] Time
+## [Page:Time] Time
 
 Now that you have ordered your values, consider how much time you should be spending on each.
 

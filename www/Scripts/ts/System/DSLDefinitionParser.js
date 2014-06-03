@@ -78,6 +78,8 @@ var Told;
                 // Sub pattern matching
                 var mCopyPattern = patternRaw.trim().match(rxCopyPattern);
 
+                // TODO: Fix priority ... check first
+                // ... can happen with targets
                 if (targetsRaw !== "") {
                     // Regex pattern
                     regex = patternRaw;
@@ -134,6 +136,11 @@ var Told;
                             }
                         }
                     }
+                }
+
+                if (regex !== "") {
+                    // Test it
+                    var rTest = new RegExp(regex);
                 }
 
                 return {

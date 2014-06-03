@@ -155,16 +155,26 @@ I will create a simple DSL to define the User Interface and Workflow. This will 
 - Begin: Use DSL Definition to Parse DSL
 
 ### 2014-06-02 9:43-10:10 !DSL
-### 2014-06-02 10:52- !DSL
+### 2014-06-02 10:52-12:48 !DSL
 - Begin: Use DSL Definition to Parse DSL
 	- Begin: Handle the "..." catch all
 
+### 2014-06-02 16:55-17:19 !DSL
+
+- Test regex when the definition is loaded 
+- Don't match on catch all if rawText=""
+- Generate debug strings for DSL Parsing
+
+### 2014-06-03 5:30-6:40 !DSL
+
+- Create DSL Viewer
+- Handle {{.}} self target
+- Debug definition
 
 ---
 # FUTURE TASKS
 
-- Use DSL Definition to Parse DSL
-	- TODO: Handle the "..." catch all
+- Handle {{.}} self target
 
 - Complete benefits analysis (30)
 - Create DSL for User Experience (60)

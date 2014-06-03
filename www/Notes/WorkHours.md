@@ -171,9 +171,15 @@ I will create a simple DSL to define the User Interface and Workflow. This will 
 - Handle {{.}} self target
 - Debug definition
 
+### 2014-06-03 16:04-16:40 !DSL
+
+- Debug definition
+
+
 ---
 # FUTURE TASKS
 
+- Create Invisible Definition Nodes
 - Handle {{.}} self target
 
 - Complete benefits analysis (30)

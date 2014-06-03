@@ -84,10 +84,11 @@ $: end of context
 
 - node: ...
 	- control: [control]
-	- text: ...
+	- lineBreak: \n\s*\r
+	- text: \s*(\line)\s* {{.}}
 
 - control: < (\word) \( (\lineNoParens) \) > (\lineNoParens?) \( (\lineNoParens) \) {{type, ..., label, hint}}
-	- input: ...(?:,|$)
+	- input: ([^,]+) {{...}}
 		- enum:	@(\word) {{.}}
 		- variable: (\ref) {{.}}
 		- literal: ("\lineNoQuotes") {{.}}

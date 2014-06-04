@@ -186,6 +186,12 @@ I will create a simple DSL to define the User Interface and Workflow. This will 
 
 - Process the left over text
 
+### 2014-06-04 8:55-9:17 !DSL
+### 2014-06-04 9:50-10:31 !DSL
+### 2014-06-04 11:10-11:50 !DSL
+
+- Refactor the dsl parser
+
 ---
 # FUTURE TASKS
 

@@ -14,6 +14,64 @@ module Told.Utils {
     // ---------------------------------------
     // Regex
     // ---------------------------------------
+    export interface IMatchInfo extends ICapture {
+        match: string[];
+        captures: ICapture[];
+    }
+
+    export interface ICapture {
+        matchText: string;
+        index: number;
+        length: number;
+
+        match?: string[];
+        captures?: ICapture[];
+    }
+
+    export function matchWithIndex(text: string, startIndex: number, r: RegExp): IMatchInfo {
+        r.lastIndex = startIndex;
+        var m = r.exec(text);
+
+        if (m === null) { return null };
+
+        var length = m[0].length;
+        var index = r.lastIndex - length;
+        r.lastIndex = 0;
+
+        var match: string[] = [];
+        m.forEach(mText=> match.push(mText));
+
+        // Find capture indices
+        var captures: ICapture[] = [];
+        var nextIndex = 0;
+
+        // Skip whole capture
+        for (var i = 1; i < m.length; i++) {
+
+            var mText = m[i];
+
+            if (mText === undefined) {
+                mText = "";
+            }
+
+            var c: ICapture = {
+                matchText: mText,
+                length: mText.length,
+                index: mText !== "" ? m[0].indexOf(m[i], nextIndex) : -1,
+
+                match: [m[i]],
+                captures: []
+            };
+
+            // Don't increment index, because sub captures can be at the same place (but not behind)
+            nextIndex = c.index;
+            captures.push(c);
+        }
+
+        return { match: match, matchText: m[0], index: index, length: length, captures: captures };
+    };
+
+
     export function expandSimpleRegex(simpleRegex: string): string {
         var expansions = [
             { simple: /`not'([^']*)'/g, actual: "(?:(?!$1).)" },

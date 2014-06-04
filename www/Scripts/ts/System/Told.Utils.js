@@ -12,9 +12,55 @@ var Told;
         }
         Utils.sameType = sameType;
 
-        // ---------------------------------------
-        // Regex
-        // ---------------------------------------
+        
+
+        function matchWithIndex(text, startIndex, r) {
+            r.lastIndex = startIndex;
+            var m = r.exec(text);
+
+            if (m === null) {
+                return null;
+            }
+            ;
+
+            var length = m[0].length;
+            var index = r.lastIndex - length;
+            r.lastIndex = 0;
+
+            var match = [];
+            m.forEach(function (mText) {
+                return match.push(mText);
+            });
+
+            // Find capture indices
+            var captures = [];
+            var nextIndex = 0;
+
+            for (var i = 1; i < m.length; i++) {
+                var mText = m[i];
+
+                if (mText === undefined) {
+                    mText = "";
+                }
+
+                var c = {
+                    matchText: mText,
+                    length: mText.length,
+                    index: mText !== "" ? m[0].indexOf(m[i], nextIndex) : -1,
+                    match: [m[i]],
+                    captures: []
+                };
+
+                // Don't increment index, because sub captures can be at the same place (but not behind)
+                nextIndex = c.index;
+                captures.push(c);
+            }
+
+            return { match: match, matchText: m[0], index: index, length: length, captures: captures };
+        }
+        Utils.matchWithIndex = matchWithIndex;
+        ;
+
         function expandSimpleRegex(simpleRegex) {
             var expansions = [
                 { simple: /`not'([^']*)'/g, actual: "(?:(?!$1).)" },

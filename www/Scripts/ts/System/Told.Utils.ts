@@ -3,6 +3,15 @@
 module Told.Utils {
 
     // ---------------------------------------
+    // Typescript
+    // ---------------------------------------
+    export function sameType<T>(targetType: T, defaultValue: any): T {
+        var t = targetType;
+        t = defaultValue;
+        return t;
+    }
+
+    // ---------------------------------------
     // Regex
     // ---------------------------------------
     export function expandSimpleRegex(simpleRegex: string): string {

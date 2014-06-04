@@ -3,6 +3,16 @@ var Told;
 (function (Told) {
     (function (Utils) {
         // ---------------------------------------
+        // Typescript
+        // ---------------------------------------
+        function sameType(targetType, defaultValue) {
+            var t = targetType;
+            t = defaultValue;
+            return t;
+        }
+        Utils.sameType = sameType;
+
+        // ---------------------------------------
         // Regex
         // ---------------------------------------
         function expandSimpleRegex(simpleRegex) {

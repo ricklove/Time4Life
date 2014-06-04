@@ -31,9 +31,10 @@ var Told;
             var rootDef = dd.roots.filter(function (r) {
                 return r.name === "ROOT";
             })[0];
-            var rootNodes = splitAndProcessParts(dd, text, rootDef.children, 0);
+            var rootNodes = splitAndProcessParts(dd, text, 0, rootDef.children, 0);
             var rootNode = {
                 rawText: text,
+                index: 0,
                 type: "ROOT",
                 _childrenText: text,
                 _childrenDefs: rootDef.children,
@@ -62,7 +63,7 @@ var Told;
         DSL.parseDsl = parseDsl;
 
         // Use the definition to parse the document
-        function splitAndProcessParts(dslDefinition, textPart, defSiblings, variableBase) {
+        function splitAndProcessParts(dslDefinition, textPart, textIndex, defSiblings, variableBase) {
             var dd = dslDefinition;
 
             if (textPart === "") {
@@ -99,8 +100,10 @@ var Told;
                 });
 
                 return {
+                    definition: s,
                     type: s.name,
-                    regex: regex,
+                    regexStr: regex,
+                    regex: new RegExp(regex, "g"),
                     variableAdjustment: variableAdjustement,
                     isOpenEnded: defSource.isOpenEnded,
                     valueNames: defSource.targets,
@@ -108,144 +111,109 @@ var Told;
                 };
             });
 
-            // Create the split regex
-            // TODO: Handle the "..." catch all
-            // If a catch all is first, it will catch the pretext
-            // If a catch all is last, it will only catch left over posttext
-            // If there are still left over posttext, the first catch all will get it
-            var captureAllDefs = defTypes.filter(function (d) {
-                return d.regex === "" && d.isOpenEnded;
-            });
-            var matchingDefs = defTypes.filter(function (d) {
-                return d.regex !== "" || !d.isOpenEnded;
-            });
-
-            var r = "(" + matchingDefs.map(function (p) {
-                return p.regex;
-            }).join("|") + ")";
-
-            // This will split like:
-            // parts=           PRETEXT,     MIDTEXT,    MIDTEXT,    POSTTEXT
-            // exactMatches=    M1,          M2,         M3
-            // replace trick to find exact matches
-            var parts = [];
-            var exactMatches = [];
-            var lastOffset = 0;
-
-            textPart.replace(new RegExp(r, "g"), function () {
-                var m = arguments[0];
-                var offset = arguments[arguments.length - 2];
-
-                parts.push({ text: textPart.substr(lastOffset, offset - lastOffset) });
-                exactMatches.push(m);
-
-                lastOffset = offset + m.length;
-
-                return m;
+            // Get post and pre catch alls
+            var defTypesWithCatchAll = defTypes.map(function (d) {
+                return {
+                    defType: d,
+                    isCatchAll: d.regexStr === "",
+                    isOpenEnded: d.isOpenEnded,
+                    preCatchAll: d,
+                    postCatchAll: d
+                };
             });
 
-            parts.push({ text: textPart.substr(lastOffset) });
-
-            var nodes = [];
-
-            // Find the specific def that was matched for each part
-            var addCaptureAllNode = function (part, isFirst) {
-                // Any parts not used will be matched to capture all:
-                // First leftover will match first capture all
-                // Other leftovers will match last capture all
-                if (part.wasUsed || captureAllDefs.length === 0 || part.text === "" || (part.text.length < 2 && part.text.trim().length === 0)) {
-                    return;
-                }
-
-                var caDef = isFirst ? captureAllDefs[0] : captureAllDefs[captureAllDefs.length - 1];
-
-                nodes.push({
-                    rawText: part.text,
-                    type: caDef.type,
-                    valueNames: [],
-                    values: [],
-                    value: "",
-                    _childrenText: part.text,
-                    _childrenDefs: caDef.children,
-                    _childrenVariableAdjustement: caDef.variableAdjustment,
-                    childrenNodes: null
-                });
+            var unknownCatchAll = {
+                definition: null,
+                type: "UNKNOWN",
+                regexStr: "",
+                regex: new RegExp("", "g"),
+                variableAdjustment: 0,
+                isOpenEnded: true,
+                valueNames: ["."],
+                children: []
             };
 
-            for (var iMatch = 0; iMatch < exactMatches.length; iMatch++) {
-                var prePart = parts[iMatch];
-                var matchText = exactMatches[iMatch];
-                var postPart = parts[iMatch + 1];
-                var postText = postPart.text;
+            defTypesWithCatchAll.forEach(function (d, i) {
+                if (!d.isCatchAll) {
+                    var cBefore = Told.Utils.sameType(d, null);
+                    var cAfter = Told.Utils.sameType(d, null);
 
-                var mType = matchingDefs.filter(function (t) {
-                    return matchText.match(t.regex) !== null;
-                })[0];
-
-                if (mType.isOpenEnded) {
-                    postPart.wasUsed = true;
-                } else {
-                    postText = "";
-                }
-
-                // DEBUG
-                if (mType.type === "text") {
-                    var breakdance = true;
-                }
-
-                // Get the actual match
-                var mValues = matchText.match(mType.regex);
-
-                if (mValues.length > 1) {
-                    var breakdance = true;
-                }
-
-                // Skip the whole match
-                mValues.shift();
-
-                var valueNames = mType.valueNames;
-                var value = "";
-                var values = {};
-                var subText = postText;
-
-                for (var iValue = 0; iValue < mValues.length; iValue++) {
-                    var vName = valueNames[iValue];
-
-                    if (vName === "...") {
-                        subText = mValues[iValue];
-                        //} else if (vName === ".") {
-                        //    value = mValues[iValue];
-                    } else {
-                        values[vName] = mValues[iValue];
+                    for (var iDefTypes = i; iDefTypes >= 0; iDefTypes--) {
+                        if (defTypesWithCatchAll[i].isCatchAll) {
+                            cBefore = defTypesWithCatchAll[i];
+                        }
                     }
+
+                    for (var iDefTypes = i; iDefTypes < defTypesWithCatchAll.length; iDefTypes++) {
+                        if (defTypesWithCatchAll[i].isCatchAll) {
+                            cAfter = defTypesWithCatchAll[i];
+                        }
+                    }
+
+                    d.preCatchAll = (cBefore !== null) ? cBefore.defType : (cAfter !== null) ? cAfter.defType : unknownCatchAll;
+
+                    d.postCatchAll = (d.isOpenEnded) ? d.defType : (cAfter !== null) ? cAfter.defType : (cBefore !== null) ? cBefore.defType : unknownCatchAll;
                 }
+            });
 
-                // Remove ...
-                valueNames = valueNames.filter(function (v) {
-                    return v !== "...";
-                }); //&& v !== ".");
+            // Find all next match
+            var text = textPart;
+            var searchIndex = 0;
 
-                addCaptureAllNode(prePart, iMatch === 0);
+            var getMatchWithIndex = function (r) {
+                r.lastIndex = searchIndex;
+                var m = r.exec(text);
 
-                nodes.push({
-                    rawText: matchText + postText,
-                    type: mType.type,
-                    valueNames: valueNames,
-                    value: value,
-                    values: values,
-                    _childrenText: subText,
-                    _childrenDefs: mType.children,
-                    _childrenVariableAdjustement: mType.variableAdjustment,
-                    childrenNodes: null
+                if (m === null) {
+                    return null;
+                }
+                ;
+
+                var length = m[0].length;
+                var index = r.lastIndex - length;
+                r.lastIndex = 0;
+
+                return { match: m, index: index, length: length };
+            };
+
+            // create blank of unknown type
+            var acceptedMatches = Told.Utils.sameType([{
+                    defTypeWithCatchAll: defTypesWithCatchAll[0],
+                    matchInfo: getMatchWithIndex(defTypesWithCatchAll[0].defType.regex)
+                }], []);
+
+            while (searchIndex < text.length) {
+                var nextMatches = defTypesWithCatchAll.filter(function (d) {
+                    return !d.isCatchAll;
+                }).map(function (d) {
+                    return { defTypeWithCatchAll: d, matchInfo: getMatchWithIndex(d.defType.regex) };
                 });
 
-                addCaptureAllNode(postPart, false);
-                //throw "breakdance";
+                var nMatch = Told.Utils.sameType(nextMatches[0], null);
+
+                nextMatches.filter(function (m) {
+                    return m.matchInfo !== null;
+                }).forEach(function (m) {
+                    return nMatch = (nMatch === null || nMatch.matchInfo.index > m.matchInfo.index) ? m : nMatch;
+                });
+
+                if (nMatch === null) {
+                    break;
+                }
+
+                acceptedMatches.push(nMatch);
+                var nextIndex = nMatch.matchInfo.index + nMatch.matchInfo.length;
+
+                if (searchIndex >= nextIndex) {
+                    break;
+                }
+
+                searchIndex = nextIndex;
             }
 
-            if (parts.length === 1) {
-                addCaptureAllNode(parts[0], true);
-            }
+            throw "Not Implemented";
+
+            var nodes = null;
 
             // Go deeper
             nodes.forEach(function (n) {
@@ -258,7 +226,7 @@ var Told;
                     n.value = n._childrenText;
                     n.childrenNodes = [];
                 } else {
-                    n.childrenNodes = splitAndProcessParts(dd, n._childrenText, n._childrenDefs, n._childrenVariableAdjustement);
+                    n.childrenNodes = splitAndProcessParts(dd, n._childrenText, n._childrenTextIndex, n._childrenDefs, n._childrenVariableAdjustement);
                 }
             });
 

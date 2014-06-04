@@ -15,12 +15,14 @@ module Told.DSL {
         _debugAll?: string;
         _preText?: string;
         rawText: string;
+        index: number;
 
         //Type is the definition name that matches
         type: string;
 
         // Children are sub definition matches
         _childrenText?: string;
+        _childrenTextIndex?: number;
         _childrenDefs?: IDslDefinitionEntry[];
         _childrenVariableAdjustement?: number;
 
@@ -68,9 +70,10 @@ module Told.DSL {
 
         // Start with "ROOT" (ignore its pattern)
         var rootDef = dd.roots.filter(r=> r.name === "ROOT")[0];
-        var rootNodes = splitAndProcessParts(dd, text, rootDef.children, 0);
+        var rootNodes = splitAndProcessParts(dd, text, 0, rootDef.children, 0);
         var rootNode: IDslNode = {
             rawText: text,
+            index: 0,
             type: "ROOT",
 
             _childrenText: text,
@@ -103,7 +106,7 @@ module Told.DSL {
     }
 
     // Use the definition to parse the document
-    export function splitAndProcessParts(dslDefinition: IDslDefinition, textPart: string, defSiblings: IDslDefinitionEntry[], variableBase: number): IDslNode[] {
+    export function splitAndProcessParts(dslDefinition: IDslDefinition, textPart: string, textIndex: number, defSiblings: IDslDefinitionEntry[], variableBase: number): IDslNode[] {
 
         var dd = dslDefinition;
 
@@ -137,8 +140,10 @@ module Told.DSL {
                 regex = Told.Utils.replaceAll(regex, v.text, "" + (v.defaultValue + variableBase + variableAdjustement)));
 
             return {
+                definition: s,
                 type: s.name,
-                regex: regex,
+                regexStr: regex,
+                regex: new RegExp(regex, "g"),
                 variableAdjustment: variableAdjustement,
                 isOpenEnded: defSource.isOpenEnded,
                 valueNames: defSource.targets,
@@ -146,151 +151,114 @@ module Told.DSL {
             };
         });
 
-        // Create the split regex
-        // TODO: Handle the "..." catch all
-        // If a catch all is first, it will catch the pretext
-        // If a catch all is last, it will only catch left over posttext
-        // If there are still left over posttext, the first catch all will get it
-        var captureAllDefs = defTypes.filter(d=> d.regex === "" && d.isOpenEnded);
-        var matchingDefs = defTypes.filter(d=> d.regex !== "" || !d.isOpenEnded);
-
-        var r = "("
-            + matchingDefs.map(p=> p.regex).join("|")
-            + ")";
-
-        // This will split like:
-        // parts=           PRETEXT,     MIDTEXT,    MIDTEXT,    POSTTEXT
-        // exactMatches=    M1,          M2,         M3
-
-        // replace trick to find exact matches
-        var parts: { text: string; wasUsed?: boolean; }[] = [];
-        var exactMatches: string[] = [];
-        var lastOffset = 0;
-
-        textPart.replace(new RegExp(r, "g"), function () {
-
-            var m = <string> arguments[0];
-            var offset = <number> arguments[arguments.length - 2];
-
-            parts.push({ text: textPart.substr(lastOffset, offset - lastOffset) });
-            exactMatches.push(m);
-
-            lastOffset = offset + m.length;
-
-            return m;
+        // Get post and pre catch alls
+        var defTypesWithCatchAll = defTypes.map(d=> {
+            return {
+                defType: d,
+                isCatchAll: d.regexStr === "",
+                isOpenEnded: d.isOpenEnded,
+                preCatchAll: d,
+                postCatchAll: d,
+            };
         });
 
-        parts.push({ text: textPart.substr(lastOffset) });
-
-        var nodes: IDslNode[] = [];
-
-        // Find the specific def that was matched for each part
-
-
-        var addCaptureAllNode = (part: { text: string; wasUsed?: boolean; }, isFirst: boolean) => {
-            // Any parts not used will be matched to capture all:
-            // First leftover will match first capture all
-            // Other leftovers will match last capture all
-            if (part.wasUsed
-                || captureAllDefs.length === 0
-                || part.text === ""
-                || (part.text.length < 2 && part.text.trim().length === 0)) {
-                return;
-            }
-
-            var caDef = isFirst ? captureAllDefs[0] : captureAllDefs[captureAllDefs.length - 1];
-
-            nodes.push({
-                rawText: part.text,
-
-                type: caDef.type,
-                valueNames: [],
-                values: [],
-                value: "",
-
-                _childrenText: part.text,
-                _childrenDefs: caDef.children,
-                _childrenVariableAdjustement: caDef.variableAdjustment,
-                childrenNodes: null
-            });
+        var unknownCatchAll = {
+            definition: null,
+            type: "UNKNOWN",
+            regexStr: "",
+            regex: new RegExp("", "g"),
+            variableAdjustment: 0,
+            isOpenEnded: true,
+            valueNames: ["."],
+            children: [],
         };
 
-        for (var iMatch = 0; iMatch < exactMatches.length; iMatch++) {
+        defTypesWithCatchAll.forEach((d, i) => {
+            if (!d.isCatchAll) {
 
-            var prePart = parts[iMatch];
-            var matchText = exactMatches[iMatch];
-            var postPart = parts[iMatch + 1];
-            var postText = postPart.text;
+                var cBefore = Told.Utils.sameType(d, null);
+                var cAfter = Told.Utils.sameType(d, null);
 
-            var mType = matchingDefs.filter(t=> matchText.match(t.regex) !== null)[0];
-
-            if (mType.isOpenEnded) {
-                postPart.wasUsed = true;
-            } else {
-                postText = "";
-            }
-
-            // DEBUG
-            if (mType.type === "text") {
-                var breakdance = true;
-            }
-
-            // Get the actual match
-            var mValues = matchText.match(mType.regex);
-
-            if (mValues.length > 1) {
-                var breakdance = true;
-            }
-
-            // Skip the whole match
-            mValues.shift();
-
-
-
-            var valueNames = mType.valueNames;
-            var value: string = "";
-            var values = {};
-            var subText = postText;
-
-            for (var iValue = 0; iValue < mValues.length; iValue++) {
-
-                var vName = valueNames[iValue];
-
-                if (vName === "...") {
-                    subText = mValues[iValue];
-                    //} else if (vName === ".") {
-                    //    value = mValues[iValue];
-                } else {
-                    values[vName] = mValues[iValue];
+                for (var iDefTypes = i; iDefTypes >= 0; iDefTypes--) {
+                    if (defTypesWithCatchAll[i].isCatchAll) {
+                        cBefore = defTypesWithCatchAll[i];
+                    }
                 }
+
+                for (var iDefTypes = i; iDefTypes < defTypesWithCatchAll.length; iDefTypes++) {
+                    if (defTypesWithCatchAll[i].isCatchAll) {
+                        cAfter = defTypesWithCatchAll[i];
+                    }
+                }
+
+                d.preCatchAll =
+                (cBefore !== null) ? cBefore.defType
+                : (cAfter !== null) ? cAfter.defType
+                : unknownCatchAll;
+
+                d.postCatchAll =
+                (d.isOpenEnded) ? d.defType
+                : (cAfter !== null) ? cAfter.defType
+                : (cBefore !== null) ? cBefore.defType
+                : unknownCatchAll;
+            }
+        });
+
+
+        // Find all next match
+        var text = textPart;
+        var searchIndex = 0;
+
+        var getMatchWithIndex = (r: RegExp) => {
+            r.lastIndex = searchIndex;
+            var m = r.exec(text);
+
+            if (m === null) { return null };
+
+            var length = m[0].length;
+            var index = r.lastIndex - length;
+            r.lastIndex = 0;
+
+            return { match: m, index: index, length: length };
+        };
+
+        // create blank of unknown type
+        var acceptedMatches = Told.Utils.sameType([{
+            defTypeWithCatchAll: defTypesWithCatchAll[0],
+            matchInfo: getMatchWithIndex(defTypesWithCatchAll[0].defType.regex)
+        }], []);
+
+        while (searchIndex < text.length) {
+            var nextMatches = defTypesWithCatchAll
+                .filter(d=> !d.isCatchAll)
+                .map(d=> { return { defTypeWithCatchAll: d, matchInfo: getMatchWithIndex(d.defType.regex) } });
+
+            var nMatch = Told.Utils.sameType(nextMatches[0], null);
+
+            nextMatches
+                .filter(m=> m.matchInfo !== null)
+                .forEach(m=> nMatch = (nMatch === null || nMatch.matchInfo.index > m.matchInfo.index) ? m : nMatch);
+
+            if (nMatch === null) {
+                break;
             }
 
-            // Remove ...
-            valueNames = valueNames.filter(v=> v !== "...");//&& v !== ".");
+            acceptedMatches.push(nMatch);
+            var nextIndex = nMatch.matchInfo.index + nMatch.matchInfo.length;
 
-            addCaptureAllNode(prePart, iMatch === 0);
+            if (searchIndex >= nextIndex) {
+                break;
+            }
 
-            nodes.push({
-                rawText: matchText + postText,
-
-                type: mType.type,
-                valueNames: valueNames,
-                value: value,
-                values: values,
-                _childrenText: subText,
-                _childrenDefs: mType.children,
-                _childrenVariableAdjustement: mType.variableAdjustment,
-                childrenNodes: null
-            });
-
-            addCaptureAllNode(postPart, false);
-
-            //throw "breakdance";
+            searchIndex = nextIndex;
         }
 
-        if (parts.length === 1) {
-            addCaptureAllNode(parts[0], true);
-        }
+        // TODO: Process the leftover texts with the catch alls
+
+
+        throw "Not Implemented";
+
+        var nodes = null;
 
         // Go deeper
         nodes.forEach(n=> {
@@ -304,7 +272,7 @@ module Told.DSL {
                 n.value = n._childrenText;
                 n.childrenNodes = [];
             } else {
-                n.childrenNodes = splitAndProcessParts(dd, n._childrenText, n._childrenDefs, n._childrenVariableAdjustement);
+                n.childrenNodes = splitAndProcessParts(dd, n._childrenText, n._childrenTextIndex, n._childrenDefs, n._childrenVariableAdjustement);
             }
         });
 

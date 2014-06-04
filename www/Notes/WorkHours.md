@@ -176,13 +176,20 @@ I will create a simple DSL to define the User Interface and Workflow. This will 
 - Debug definition
 
 ### 2014-06-03 16:52-17:27 !DSL
-### 2014-06-04 5:25- !DSL
+### 2014-06-04 5:25-6:13 !DSL
 
 - Change matching logic
+	- Find the next match
+	- Find the appropriate catch alls for each match
 
+### 2014-06-04 6:14-8:05 !DSL
+
+- Process the left over text
 
 ---
 # FUTURE TASKS
+
+- Refactor the logic (add interfaces and split into multiple functions)
 
 - Create Invisible Definition Nodes
 - Handle {{.}} self target

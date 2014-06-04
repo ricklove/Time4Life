@@ -13,18 +13,22 @@ module Told.DSL {
     export interface IDslNode {
         _debug?: string;
         _debugAll?: string;
-        _preText?: string;
-        rawText: string;
-        index: number;
+
+        _rawText: string;
+        _index: number;
+        _indexInSubText: number;
+        _length: number;
 
         //Type is the definition name that matches
+        _definition: IDslDefinitionEntry;
         type: string;
 
         // Children are sub definition matches
-        _childrenText?: string;
-        _childrenTextIndex?: number;
-        _childrenDefs?: IDslDefinitionEntry[];
-        _childrenVariableAdjustement?: number;
+        _childrenText: string;
+        _childrenTextIndexInSubText: number;
+        _childrenTextIndex: number;
+        _childrenDefs: IDslDefinitionEntry[];
+        _childrenVariableAdjustment: number;
 
         childrenNodes: IDslNode[];
 
@@ -72,13 +76,18 @@ module Told.DSL {
         var rootDef = dd.roots.filter(r=> r.name === "ROOT")[0];
         var rootNodes = splitAndProcessParts(dd, text, 0, rootDef.children, 0);
         var rootNode: IDslNode = {
-            rawText: text,
-            index: 0,
+            _rawText: text,
+            _index: 0,
+            _indexInSubText: 0,
+            _length: text.length,
             type: "ROOT",
+            _definition: null,
 
             _childrenText: text,
+            _childrenTextIndex: 0,
+            _childrenTextIndexInSubText: 0,
             _childrenDefs: rootDef.children,
-            _childrenVariableAdjustement: 0,
+            _childrenVariableAdjustment: 0,
             childrenNodes: rootNodes,
 
             value: "",
@@ -106,11 +115,11 @@ module Told.DSL {
     }
 
     // Use the definition to parse the document
-    export function splitAndProcessParts(dslDefinition: IDslDefinition, textPart: string, textIndex: number, defSiblings: IDslDefinitionEntry[], variableBase: number): IDslNode[] {
+    export function splitAndProcessParts(dslDefinition: IDslDefinition, textPart: string, textIndexInDocument: number, defSiblings: IDslDefinitionEntry[], variableBase: number): IDslNode[] {
 
         var dd = dslDefinition;
 
-        if (textPart === "") { return []; }
+        if (textPart === "" || textPart === null) { return []; }
 
         // Get the sibling patterns
         var defTypes = defSiblings.map(s=> {
@@ -180,14 +189,14 @@ module Told.DSL {
                 var cAfter = Told.Utils.sameType(d, null);
 
                 for (var iDefTypes = i; iDefTypes >= 0; iDefTypes--) {
-                    if (defTypesWithCatchAll[i].isCatchAll) {
-                        cBefore = defTypesWithCatchAll[i];
+                    if (defTypesWithCatchAll[iDefTypes].isCatchAll) {
+                        cBefore = defTypesWithCatchAll[iDefTypes];
                     }
                 }
 
                 for (var iDefTypes = i; iDefTypes < defTypesWithCatchAll.length; iDefTypes++) {
-                    if (defTypesWithCatchAll[i].isCatchAll) {
-                        cAfter = defTypesWithCatchAll[i];
+                    if (defTypesWithCatchAll[iDefTypes].isCatchAll) {
+                        cAfter = defTypesWithCatchAll[iDefTypes];
                     }
                 }
 
@@ -209,6 +218,7 @@ module Told.DSL {
         var text = textPart;
         var searchIndex = 0;
 
+
         var getMatchWithIndex = (r: RegExp) => {
             r.lastIndex = searchIndex;
             var m = r.exec(text);
@@ -219,7 +229,7 @@ module Told.DSL {
             var index = r.lastIndex - length;
             r.lastIndex = 0;
 
-            return { match: m, index: index, length: length };
+            return { match: m, matchText: m[0], index: index, length: length };
         };
 
         // create blank of unknown type
@@ -253,26 +263,209 @@ module Told.DSL {
             searchIndex = nextIndex;
         }
 
-        // TODO: Process the leftover texts with the catch alls
+        // Process the leftover text with the catch alls
+        var textRanges = Told.Utils.sameType([{
+            index: 0,
+            length: 0,
+            isCatchAll: false,
+            match: [""],
+            defType: defTypes[0],
+            wasHandled: false,
+        }], []);
 
+        var iNext = 0;
+        var am: { defTypeWithCatchAll: any; matchInfo: { match: string[]; matchText: string; index: number; length: number; } }[] = <any> acceptedMatches;
 
-        throw "Not Implemented";
+        // Pre text (this will only happen before the first index)
+        if (am.length > 0) {
+            if (iNext < am[0].matchInfo.index) {
+                var tIndex = iNext;
+                var tLength = am[0].matchInfo.index - iNext;
+                var tType = am[0].defTypeWithCatchAll.preCatchAll;
 
-        var nodes = null;
+                textRanges.push({
+                    index: tIndex,
+                    length: tLength,
+                    isCatchAll: true,
+                    match: [text.substr(tIndex, tLength)],
+                    defType: tType,
+                    wasHandled: false,
+                });
+
+                iNext = am[0].matchInfo.index;
+            }
+        }
+        else {
+            var tIndex = iNext;
+            var tLength = text.length;
+            var tType2 = defTypesWithCatchAll[0].preCatchAll;
+
+            textRanges.push({
+                index: tIndex,
+                length: tLength,
+                isCatchAll: true,
+                match: [text.substr(tIndex, tLength)],
+                defType: tType2,
+                wasHandled: false,
+            });
+        }
+
+        am.forEach((a, i) => {
+
+            // Match text
+            var tr = {
+                index: a.matchInfo.index,
+                length: a.matchInfo.length,
+                isCatchAll: false,
+                match: a.matchInfo.match,
+                defType: a.defTypeWithCatchAll.defType,
+                wasHandled: false,
+            };
+
+            if (a.defTypeWithCatchAll.defType.isOpenEnded) {
+
+            }
+
+            textRanges.push(tr);
+            iNext = tr.index + tr.length;
+
+            //if (!a.defTypeWithCatchAll.defType.isOpenEnded) {
+            // Post text
+            var tPostIndex = iNext;
+            var tPostLength = 0;
+            var tPostType = a.defTypeWithCatchAll.postCatchAll;
+
+            if (i + 1 < am.length) {
+                tPostLength = am[i + 1].matchInfo.index - iNext;
+            } else {
+                // Last match
+                tPostLength = text.length - iNext;
+            }
+
+            if (tPostLength > 0) {
+                textRanges.push({
+                    index: tPostIndex,
+                    length: tPostLength,
+                    isCatchAll: true,
+                    match: [text.substr(tPostIndex, tPostLength)],
+                    defType: tPostType,
+                    wasHandled: false,
+                });
+
+                iNext = tPostIndex + tPostLength;
+            }
+            //}
+        });
+
+        // Process the text ranges with their definitions
+        var nodes: IDslNode[] = [];
+
+        textRanges.forEach((t, ti) => {
+
+            if (t.wasHandled) { return null; }
+
+            var result = {
+                _debug: "",
+                _debugAll: "",
+                _rawText: t.match[0],
+                _index: t.index + textIndexInDocument,
+                _indexInSubText: t.index,
+                _length: t.length,
+
+                //Type is the definition name that matches
+                _definition: t.defType.definition,
+                type: t.defType.type,
+
+                // Children are sub definition matches
+                _childrenText: null,
+                _childrenTextIndexInSubText: null,
+                _childrenTextIndex: null,
+
+                _childrenDefs: t.defType.children,
+                _childrenVariableAdjustment: t.defType.variableAdjustment,
+
+                childrenNodes: null,
+
+                // Values are dynamically created
+                value: "", // {{.}}
+                valueNames: [],
+                values: {},
+            };
+
+            result._childrenDefs = t.defType.children;
+            result._childrenVariableAdjustment = t.defType.variableAdjustment;
+
+            if (!t.isCatchAll) {
+
+                var valueNames = t.defType.valueNames;
+                var values = {};
+                var mValues = t.match.slice(1);
+                var subText = "";
+
+                for (var iValue = 0; iValue < mValues.length; iValue++) {
+
+                    var vName = valueNames[iValue];
+
+                    if (vName === "...") {
+                        subText = mValues[iValue];
+                    } else {
+                        values[vName] = mValues[iValue];
+                    }
+                }
+
+                // Remove ...
+                valueNames = valueNames.filter(v=> v !== "..." && v !== ".");
+
+                result.valueNames = valueNames;
+                result.values = values;
+
+                if (subText !== "") {
+                    result._childrenText = subText;
+                    result._childrenTextIndexInSubText = t.match.indexOf(subText) + t.index;
+                    result._childrenTextIndex = result._childrenTextIndexInSubText + textIndexInDocument;
+                }
+
+                if (t.defType.isOpenEnded) {
+                    var tNext = textRanges[ti + 1];
+                    tNext.wasHandled = true;
+                    result._childrenText = text.substr(tNext.index, tNext.length);
+                    result._childrenTextIndexInSubText = tNext.index;
+                    result._childrenTextIndex = result._childrenTextIndexInSubText + textIndexInDocument;
+                }
+
+            } else {
+                result._childrenText = text.substr(t.index, t.length);
+                result._childrenTextIndexInSubText = t.index;
+                result._childrenTextIndex = result._childrenTextIndexInSubText + textIndexInDocument;
+            }
+
+            nodes.push(result);
+            t.wasHandled = true;
+        });
+
 
         // Go deeper
         nodes.forEach(n=> {
+            n.childrenNodes = [];
 
-            if (n.type === "text") {
-                var breakdance = true;
+            if (n.type === "UNKNOWN") {
+                n.value = n._rawText;
+                return;
             }
 
-            // Handle '...' with no children
-            if (n._childrenDefs.length === 0) {
-                n.value = n._childrenText;
-                n.childrenNodes = [];
-            } else {
-                n.childrenNodes = splitAndProcessParts(dd, n._childrenText, n._childrenTextIndex, n._childrenDefs, n._childrenVariableAdjustement);
+            if (n._childrenText !== null) {
+
+                if (n.type === "text") {
+                    var breakdance = true;
+                }
+
+                // Handle '...' with no children
+                if (n._childrenDefs.length === 0) {
+                    n.value = n._childrenText;
+                    n.childrenNodes = [];
+                } else {
+                    n.childrenNodes = splitAndProcessParts(dd, n._childrenText, n._childrenTextIndex, n._childrenDefs, n._childrenVariableAdjustment);
+                }
             }
         });
 
